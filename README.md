@@ -1,6 +1,8 @@
 # The Folk Linguistic Online Mapping application
 [https://depts.washington.edu/flom/](https://depts.washington.edu/flom/)
 
+Update in progress!
+
 # FLOM React
 Containerized React version of the Folk Linguistic Online Mapping application. This application is designed as an open-source, customizable suite of survey tools for collecting mental maps digitally for linguistic research.
 
