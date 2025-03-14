@@ -106,6 +106,18 @@ const handleChange = (event) => {
             <Form.Group key={question.id}>
               <Label label={question.title} audio={question.audio} />
               <Form.Range id={question.id} onChange={handleChange} />
+                {question.least && question.best && (
+                  <Container>
+                    <Row>
+                      <Col>
+                        <p>{question.least}</p>
+                      </Col>
+                      <Col>
+                        <p style={{textAlign: 'right'}}>{question.best}</p>
+                      </Col>
+                    </Row>
+                  </Container>
+                )}
             </Form.Group>
           );
         }
