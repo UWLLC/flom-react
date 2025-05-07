@@ -1,33 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
-import JSONViewer from 'react-json-viewer';
 import user from '../../services/user';
 import { Menu } from '../../components/Menu';
+import Loading from '../../components/Loading';
 
-const dataExport = (filename, dataObjToWrite) => {
-    const blob = new Blob([JSON.stringify(dataObjToWrite)], { type: "text/json" });
-    const link = document.createElement("a");
-        link.download = filename;
-        link.href = window.URL.createObjectURL(blob);
-        link.dataset.downloadurl = ["text/json", link.download, link.href].join(":");
+const OutputFormatter = lazy(() => import('../../components/OutputFormatter'));
 
-    const evt = new MouseEvent("click", {
-        view: window,
-        bubbles: true,
-        cancelable: true,
-    });
-    link.dispatchEvent(evt);
-    link.remove()
-};
-
-function SurveyDetailPage(props) {
+function SurveyResponsePage(props) {
   const [content, setContent] = useState([]);
-  const { surveyId } = useParams();
+  const [survey, setSurvey] = useState([]);
+  const { surveyId, isComplete } = useParams();
+
+  const initialState = {
+    currentPage: 0,
+    isComplete: false,
+    isFetching: true,
+    isStart: false,
+    surveyLength: 0,
+    mapColor: "#b1ef8d",
+  };
+
+  const [showResp, setShowResp] = useState(initialState);
+
   useEffect(() => {
-      user.surveyResponse(surveyId).then(
+    user.surveyDetail(surveyId).then(
       (response) => {
-            setContent(response.data);
-            //console.log(response);
+        setSurvey(response.data[0].detail);
+        setShowResp(setShowResp => ( {...showResp,
+          currentPage: 0,
+          surveyLength: response.data[0].detail.activities.length,
+          isFetching: false
+        }));
+        // setActivity();
+        //console.log(response);
       },
       (error) => {
         const _content =
@@ -37,17 +42,50 @@ function SurveyDetailPage(props) {
         setContent(_content);
       }
     );
+
+    user.surveyResponse(surveyId).then(
+      (response) => {
+          setContent(response.data);
+        //console.log(response);
+      },
+      (error) => {
+        const _content =
+          (error.response && error.response.data) ||
+          error.message ||
+          error.toString();
+        setContent(_content);
+      }
+      );
   }, []);
 
+  const getSurveyDef = () => {
+    return survey;
+  }
 
-  if (!content[0]) { return null; }
+  const getRespDef = () => {
+    return content;
+  }
+
+  if (showResp.isFetching) {
+    return null;
+  }
+
+  const respDef = getRespDef();
+  const surveyDef = getSurveyDef();
+
   return (
     <>
-        <Menu />
-        <button type="button" onClick={() => dataExport("Export.json", content)}>Export</button>
-        <JSONViewer json={content} />
+    <Menu />
+      <Suspense fallback={<Loading />}>
+        {respDef && surveyDef && (
+          <OutputFormatter
+            survey={surveyDef}
+            responses={respDef}
+          />
+        )}
+      </Suspense>
     </>
   );
 }
 
-export default SurveyDetailPage;
+export default SurveyResponsePage;
