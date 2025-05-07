@@ -5,8 +5,12 @@ import { Button } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 
 const useAudio = (src) => {
-  const [audio] = useState(new Audio(src));
+  const [audio] = useState(new Audio());
   const [playing, setPlaying] = useState(false);
+
+  audio.crossOrigin = "anonymous";
+  audio.src = src;
+  audio.type = 'audio/mpeg';
 
   const toggle = () => setPlaying(!playing);
 
