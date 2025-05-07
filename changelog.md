@@ -227,3 +227,16 @@ I used a couple blog posts about how to set up Express and postgres:
 
 Some relevant stack overflow docs:
 * https://stackoverflow.com/questions/46013544/yarn-install-command-error-no-such-file-or-directory-install
+
+## Sprint 11: 5/2025 (new dev: Angie McMillan-Major)
+* Fixed char used for newline split from '/n' to '\n' in `client/src/components/ParagraphRender/index.jsx` 
+* Updated `client/src/components/FormRender/index.jsx` so that the scale for rating questions is labeled when the survey definition includes the `least` and `best` properties for rating questions
+* Fixed Audio button not playing: 
+  * Updated `client/src/components/AudioButton/index.jsx` with correct src folder path for audio file
+  * Updated `client/src/pages/SurveyAddPage/index.jsx` with correct audio file path to show researcher when creating survey definition
+  * Updated `server/index.js` to allow cross-origin access (restricted to app domain)
+* Added `OutputFormatter` class to `client/src/components` to format response data into researcher-preferred TSV with one line per freedraw submission (possibly resulting in multiple lines for a single respondant) for table view and exporting
+  * Added radio button to select latitude-longitude format for the export file and table to `client/src/components/OutputFormatter/index.jsx`, e.g. Format 1: POLYGON((LAT1, LON1), (LAT2, LON2), ...); Format 2: POLYGON((LON1 LAT1, LON2 LAT2, ...))
+  * Updated `pages/SurveyResponsePage/index.jsx` call `client/src/components/OutputFormatter` to show response data in table format and to export TSV file instead of JSONviewer
+  * Updated `App.css` with style for table view
+* Fixed `client/src/components/IntroRender/index.jsx` and `client/src/pages/Survey/index.jsx` so they now use the startText property as given in a survey definition
