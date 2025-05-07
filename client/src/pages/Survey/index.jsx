@@ -122,6 +122,7 @@ function Survey(props) {
                 <IntroRender
                     title={runSurvey.surveyDefinition.title}
                     intro={runSurvey.surveyDefinition.intro}
+                    startText={runSurvey.surveyDefinition.startText}
                     onFinish={start}
                 />
             </Suspense>

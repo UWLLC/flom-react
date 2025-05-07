@@ -1,7 +1,7 @@
 import { Button } from 'react-bootstrap';
 import ParagraphRender from '../ParagraphRender';
 
-const IntroRender = function IntroRender({ title, intro, onFinish }) {
+const IntroRender = function IntroRender({ title, intro, startText, onFinish }) {
   return (
     <div className="pageContainer" style={{ overflow: 'hidden' }}>
       <div
@@ -33,7 +33,7 @@ const IntroRender = function IntroRender({ title, intro, onFinish }) {
         }}
       >
         <Button onClick={onFinish} type="primary">
-          Begin
+          {startText}
         </Button>
       </div>
     </div>
