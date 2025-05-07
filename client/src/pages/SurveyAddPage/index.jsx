@@ -114,7 +114,7 @@ function SurveyAddPage() {
                 {newSurvey.upload === true && (
                     <Card className="mb-4" md={25}>
                         <Card.Body>
-                            <h1>Path: "public/audio/{newSurvey.id}" </h1>
+                            <h1>Path: "/static/audio/{newSurvey.id}/" </h1>
                             <FileUpload ref={childRef}/>
                         </Card.Body>
                     </Card>
