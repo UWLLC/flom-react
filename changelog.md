@@ -240,3 +240,15 @@ Some relevant stack overflow docs:
   * Updated `pages/SurveyResponsePage/index.jsx` call `client/src/components/OutputFormatter` to show response data in table format and to export TSV file instead of JSONviewer
   * Updated `App.css` with style for table view
 * Fixed `client/src/components/IntroRender/index.jsx` and `client/src/pages/Survey/index.jsx` so they now use the startText property as given in a survey definition
+
+## 7/2025
+* Updated `client/src/components/OutputFormatter` to output in GeoJSON format to allow for porting survey response data to ArcGIS and other visualization systems
+* Updated `client/src/components/OutputFormatter` and created `client/src/components/ExportButtons` to clean up code
+* Created `client/src/components/RandomAudioRender` for new Random Audio Activity type
+  * Allows survey designer to upload multiple audio files along with one set of questions; audio files are presented to survey takers in random order and all questions are presented for each audio file
+* Updated `client/src/components/OutputFormatter` to handle Random Audio Activity data
+* Updated `client/src/components/FormRender` to allow questions to be required, to pass play/pause button labels to AudioLabels, and fixed radio button selection bug (click on radio option text resulted in selection of first option, no matter which option text was clicked due to id assignment)
+* Updated `client/src/components/AudioButton` to allow play/pause button labels to be defined in the survey definition
+* Specified `mode: cors` in the audio data upload in `client/src/services/api.js`
+* Changed the Cross Origin Resource Policy in `server/index.js`
+* Fixed typo in `server/routes/upload.js` (req.file not req.files, even if multiple files passed)

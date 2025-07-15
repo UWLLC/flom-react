@@ -36,7 +36,7 @@ const mp3Upload = multer({
 });
 
 router.post('/', passport.authenticate('jwt', { session: false }), mp3Upload.array('file'), async (req, res) => {
-    res.send(req.files)
+    res.send(req.file)
 }, (error, req, res, next) => {
     res.status(400).send({ error: error.message })
 })

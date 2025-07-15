@@ -16,7 +16,7 @@ app.use(
   }),
 );
 app.use(helmet());
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }));
 
 require('./config/passport')(passport);
 
@@ -25,14 +25,16 @@ app.use(passport.initialize());
 // CHANGE THIS TO YOUR URL
 const public_url = "http://example.llc.washington.edu";
 
+app.use(passport.initialize());
 app.use(function(req, res, next) {
-  res.header('Access-Control-Allow-Origin', public_url);
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header(
-      'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept'
-  );
-  next();
+    res.header('Access-Control-Allow-Origin', public_url);
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.header(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept'
+    );
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
 });
 
 app.use('/static', express.static('public'));

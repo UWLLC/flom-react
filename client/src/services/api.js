@@ -70,6 +70,7 @@ export const surveyAddPageUpload = async (data) => {
         headers: authHeader(),
         method: 'POST',
         body: data,
+        mode: 'cors'
     };
 
     await fetch('/api/upload', options)

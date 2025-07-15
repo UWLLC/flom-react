@@ -10,8 +10,7 @@ const useAudio = (src) => {
 
   audio.crossOrigin = "anonymous";
   audio.src = src;
-  audio.type = 'audio/mpeg';
-
+  audio.type = "audio/mpeg";
   const toggle = () => setPlaying(!playing);
 
   useEffect(() => {
@@ -32,15 +31,27 @@ const useAudio = (src) => {
   return [playing, toggle];
 };
 
-const AudioButton = function AudioButton({ src }) {
+const AudioButton = function AudioButton({ src, buttonPlay, buttonPause }) {
   AudioButton.propTypes = {
     src: PropTypes.string.isRequired,
   };
   const [playing, toggle] = useAudio(src);
 
+  let buttonPlayText;
+  let buttonPauseText;
+  if (buttonPlay) {
+    buttonPlayText = buttonPlay;
+  } else {
+    buttonPlayText = 'Play'
+  }
+  if (buttonPause) {
+    buttonPauseText = buttonPause;
+  } else {
+    buttonPauseText = 'Pause'
+  }
   return (
     <div>
-      <Button onClick={toggle}>{playing ? 'Pause' : 'Play'}</Button>
+      <Button autofocus onClick={toggle}>{playing ? buttonPauseText : buttonPlayText}</Button>
     </div>
   );
 };

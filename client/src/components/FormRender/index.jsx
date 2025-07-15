@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 
 import AudioButton from '../AudioButton';
 
-const Label = function Label({ label, audio }) {
+const Label = function Label({ label, audio, required, play, pause }) {
   Label.propTypes = {
     label: PropTypes.string.isRequired,
     audio: PropTypes.string,
@@ -18,12 +18,13 @@ const Label = function Label({ label, audio }) {
   return (
     <Form.Label>
       {label}
-      {audio && <AudioButton src={audio} />}
+        <span style={required === 'true' ? {color: "red"} : {display: "none"}}> *</span>
+      {audio && <AudioButton src={audio} buttonPlay={play} buttonPause={pause}/>}
     </Form.Label>
   );
 };
 
-const FormRender = function FormRender({ questions, onChange, onFinish }) {
+const FormRender = function FormRender({ questions, buttonText, onChange, onFinish, playText, pauseText }) {
   FormRender.propTypes = {
     // eslint-disable-next-line react/forbid-prop-types
     questions: PropTypes.array.isRequired,
@@ -32,6 +33,7 @@ const FormRender = function FormRender({ questions, onChange, onFinish }) {
   };
 
   const [inputs, setInputs] = useState({});
+  const [hidden, setHidden] = useState(true);
 
   const submitResponse = (event) => {
     // Need to handle the submission to avoid
@@ -43,13 +45,32 @@ const FormRender = function FormRender({ questions, onChange, onFinish }) {
         onChange(key, value);
       }
     });
-    onFinish();
+
+    const respMissing = [];
+    for (const question of questions) {
+        if (question.required === 'true' && !inputs[question.id]) {
+            respMissing.push(question.id);
+        }
+    }
+    if (respMissing.length === 0) {
+        onFinish();
+    } else {
+        setHidden(false);
+        document.getElementById(respMissing[0]).focus();
+    }
   };
 
 const handleCheckedChange = (event) => {
     event.target.value = event.target.checked;
     handleChange(event);
 };
+
+const handleRadio = (id, value) => {
+    setInputs({
+      ...inputs,
+      [id]: value,
+    });
+  };
 
 const handleChange = (event) => {
     setInputs({
@@ -65,7 +86,7 @@ const handleChange = (event) => {
         if (question.type === 'text') {
           return (
             <Form.Group className="mb-3" key={question.id}>
-              <Label label={question.title} audio={question.audio} />
+              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
               <Form.Control
                 type="text"
                 id={question.id}
@@ -77,7 +98,7 @@ const handleChange = (event) => {
         if (question.type === 'select') {
           return (
             <Form.Group className="mb-3" key={question.id}>
-              <Label label={question.title} audio={question.audio} />
+              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
               <Form.Select
                 aria-label={question.title}
                 id={question.id}
@@ -104,19 +125,19 @@ const handleChange = (event) => {
         if (question.type === 'rate') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} />
+              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
               <Form.Range id={question.id} onChange={handleChange} />
                 {question.least && question.best && (
-                  <Container>
-                    <Row>
-                      <Col>
-                        <p>{question.least}</p>
-                      </Col>
-                      <Col>
-                        <p style={{textAlign: 'right'}}>{question.best}</p>
-                      </Col>
-                    </Row>
-                  </Container>
+                    <Container>
+                        <Row>
+                            <Col>
+                                <p>{question.least}</p>
+                            </Col>
+                            <Col>
+                                <p style={{textAlign: 'right'}}>{question.best}</p>
+                            </Col>
+                        </Row>
+                    </Container>
                 )}
             </Form.Group>
           );
@@ -124,7 +145,7 @@ const handleChange = (event) => {
         if (question.type === 'num') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} />
+              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
               <Form.Control
                 type="number"
                 id={question.id}
@@ -136,7 +157,7 @@ const handleChange = (event) => {
         if (question.type === 'textarea') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} />
+              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
               <Form.Control
                 type="textarea"
                 id={question.id}
@@ -149,18 +170,18 @@ const handleChange = (event) => {
               //console.log(JSON.stringify(inputs))
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} />
+              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
               <div key={question.id} className="mb-3">
                 {question.options.map((option) => (
                   <Form.Check
                     inline
                     type="radio"
                     key={option.id}
-                    id={question.id}
+                    id={option.id}
                     value={option.text}
-                    checked={inputs[question.id] === option.text}
                     label={option.text}
-                    onChange={handleChange}
+                    checked={inputs[question.id]===option.text}
+                    onChange={(e) => handleRadio(question.id, option.text)}
                   />
                 ))}
               </div>
@@ -170,7 +191,7 @@ const handleChange = (event) => {
           if (question.type === 'boolean') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} />
+              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
               <div key={question.id} className="mb-3">
                 <Form.Check
                   inline
@@ -199,7 +220,7 @@ const handleChange = (event) => {
         if (question.type === 'checkbox') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} />
+              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
               <div key={question.id} className="mb-3">
                 {question.options.map((option) => (
                   <Form.Check
@@ -208,7 +229,7 @@ const handleChange = (event) => {
                     key={option.id}
                     id={option.id}
                     label={option.text}
-                    
+
                         onChange={handleCheckedChange}
                   />
                 ))}
@@ -226,8 +247,11 @@ const handleChange = (event) => {
         <Row>
           <Col align="center">
             <Button variant="primary" type="submit">
-              Next
+              { buttonText ? buttonText : "Next" }
             </Button>
+          </Col>
+          <Col>
+             <span style={hidden ? {display: "none"}: {color: "red"}}>*Please complete the required questions before moving to the next section.</span>
           </Col>
         </Row>
       </Container>

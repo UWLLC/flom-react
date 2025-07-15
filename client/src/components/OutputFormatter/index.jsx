@@ -1,75 +1,69 @@
 import { Component, Suspense } from 'react';
 import { Button, Table, Form, Container, Row, Col } from 'react-bootstrap';
 import Loading from '../../components/Loading';
+import ExportButtons from '../ExportButtons';
 
 class OutputFormatter extends Component {
     constructor(prop) {
         super(prop);
 
         this.state = {
+            currToggle: 'LonLat',
             headers: [],
             rowsLatLon: [],
             rowsLonLat: [],
-            currToggle: 'LatLon',
+            freeDrawActIDs: [],
+            predefinedIDs: [],
+            additionalQIDs: {},
+            addBasedOnIDs: {},
+            pre_geoJSON: {},
+            fd_geoJSON: {},
+            h_loaded: false,
+            tab_loaded: false,
+            gis_loaded: false,
         };
 
-        this.formatExport = this.formatExport.bind(this);
-        this.dataExport = this.dataExport.bind(this);
+        this.formatQuestionsHeaders = this.formatQuestionsHeaders.bind(this);
         this.getHeaders = this.getHeaders.bind(this);
-        this.formatTabular = this.formatTabular.bind(this);
         this.getRepeatData = this.getRepeatData.bind(this);
+        this.getGeometry = this.getGeometry.bind(this);
+        this.getZoom = this.getZoom.bind(this);
+        this.pushTwice = this.pushTwice.bind(this);
+        this.formatTabular = this.formatTabular.bind(this);
+        this.formatGeoJSON = this.formatGeoJSON.bind(this);
     }
+
 
     componentDidMount() {
-        const [headers, freeDrawActIDs, additionalQIDs, addBasedOnIDs] = this.getHeaders();
-        this.formatTabular(headers, freeDrawActIDs, additionalQIDs, addBasedOnIDs);
-    }
-
-    dataExport(filename, outputType) {
-        const result = this.formatExport(outputType);
-        const blob = new Blob([result], { type: outputType });
-        const link = document.createElement("a");
-        link.download = filename;
-        link.href = window.URL.createObjectURL(blob);
-        link.dataset.downloadurl = [outputType, link.download, link.href].join(":");
-
-        const evt = new MouseEvent("click", {
-            view: window,
-            bubbles: true,
-            cancelable: true,
-        });
-        link.dispatchEvent(evt);
-        link.remove();
-    }
-
-    formatExport(outputType) {
-        let result;
-        if (outputType === "text/tab-separated-values") {
-            // 5/3/24 AMM: This code is from StackOverflow:
-            // https://stackoverflow.com/questions/8847766/how-to-convert-json-to-csv-format-and-store-in-a-variable
-            if (this.state.currToggle === 'LatLon') {
-                result = [
-                    this.state.headers.join('\t'), // header row first
-                    ...this.state.rowsLatLon.map(row => row.join('\t'))
-                ].join('\r\n');
-            } else {
-                result = [
-                    this.state.headers.join('\t'), // header row first
-                    ...this.state.rowsLonLat.map(row => row.join('\t'))
-                ].join('\r\n');
-            }
-        } else if (outputType === "text") {
-            result = JSON.stringify(this.props.responses).replaceAll("\",", "\n").replaceAll("},", "\n").replaceAll("{", "");      
-        } else if (outputType === "text/json") {
-            result = JSON.stringify(this.props.responses);
-        } else {
-            console.log("Unsupported output type! Choices are:");
-            console.log("text/tab-separated-values");
-            console.log("text/json");
-            console.log("text");
-            return null;
+        if (this.props.responses) {
+            this.getHeaders();
         }
-        return result;
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if (this.props.responses !== prevProps.responses) {
+            this.setState({
+                ...this.state,
+                h_loaded: false,
+                tab_loaded: false,
+                gis_loaded: false
+            })
+            this.getHeaders();
+        }
+    }
+
+    formatQuestionsHeaders(questions, prefix) {
+        const formatted = [];
+        for (const q of questions) {
+            if (q["type"] === "checkbox") {
+                for (const opt of q["options"]) {
+                    formatted.push(prefix + opt["id"]);
+                }
+            } else {
+                formatted.push(prefix + q["id"]);
+            }
+        }
+        return formatted;
     }
 
     getHeaders() {
@@ -78,34 +72,28 @@ class OutputFormatter extends Component {
         headers.splice(detailIdx, 1);
 
         const freeDrawActIDs = [];
+        const predefinedIDs = [];
         const additionalQIDs = {};
         const addBasedOnIDs = {}; // addQID: basedOnID
         for (const activity of this.props.survey["activities"]) { //this.survey["activities"]) {
             if (activity["type"] === 'map') {
                 if (activity["function"] === 'predefined') {
+                    predefinedIDs.push(activity["id"]);
                     for (const q of activity["questions"]) {
                         headers.push(q["id"] + "-geometry");
                         headers.push(q["id"] + "-zoom");
                         if (q.hasOwnProperty("questions")) {
-                            for (const formQ of q["questions"]) {
-                                headers.push(q["id"] + "-" + formQ["id"]);
-                            }
+                            const h = this.formatQuestionsHeaders(q["questions"], q["id"] + "-");
+                            h.forEach((h_item) => headers.push(h_item));
                         }
                     }
                 } else if (activity["function"] === 'additional') {
-                    for (const q of activity["questions"]) {
-                        if (q["type"] === "checkbox") {
-                            for (const option of q["options"]) {
-                                headers.push(option["id"]);
-                                additionalQIDs[option["id"]] = activity["id"];
-                                addBasedOnIDs[option["id"]] = activity["basedOn"];
-                            }
-                        } else {
-                            headers.push(q["id"]);
-                            additionalQIDs[q["id"]] = activity["id"];
-                            addBasedOnIDs[q["id"]] = activity["basedOn"];
-                        }
-                    }
+                    const h = this.formatQuestionsHeaders(activity["questions"], "add-");
+                    h.forEach((h_item) => headers.push(h_item));
+                    h.forEach((addH) => {
+                        additionalQIDs[addH] = activity["id"];
+                        addBasedOnIDs[addH] = activity["basedOn"];
+                    });
                 } else if (activity["function"] === 'freedraw') {
                     freeDrawActIDs.push(activity["id"]);
                     headers.push(activity["id"] + "-name");
@@ -114,94 +102,121 @@ class OutputFormatter extends Component {
                 } else {
                     console.log("unsupported map type");
                 }
-            } else if (activity["type"] === 'form') {
+            } else if (activity["type"] === 'randomAudio') { // START HERE
+                for (const audio of activity["audioFiles"]) {
+                    const filename = audio.slice(audio.lastIndexOf("/") + 1);
+                    const h = this.formatQuestionsHeaders(activity["questions"], filename + "-");
+                    h.forEach((h_item) => headers.push(h_item));
+                    headers.push(filename + "-random_order_num");
+                }
+            } else {
+                const h = this.formatQuestionsHeaders(activity["questions"], "");
+                h.forEach((h_item) => headers.push(h_item));
+            }
+        }
+        this.setState({
+            ...this.state,
+            headers: headers,
+            freeDrawActIDs: freeDrawActIDs,
+            predefinedIDs: predefinedIDs,
+                    additionalQIDs: additionalQIDs,
+                    addBasedOnIDs: addBasedOnIDs,
+            h_loaded: true
+        });
+    }
+
+
+    getRepeatData(response) {
+        const repeat = {};
+        for (const surveyinfo in response) {
+            if (surveyinfo != 'detail') {
+                repeat[surveyinfo] = response[surveyinfo];
+            }
+        }
+
+        for (const activity of this.props.survey["activities"]) {
+            //const actID = activity["id"];
+            const r_d_actID = response["detail"][activity["id"]];
+            if (activity["type"] === 'form') {
                 for (const q of activity["questions"]) {
                     if (q["type"] === "checkbox") {
                         for (const option of q["options"]) {
-                            headers.push(option["id"]);
+                            if (option["id"] in r_d_actID) {
+                                repeat[option["id"]] = r_d_actID[option["id"]];
+                            } else {
+                                repeat[option["id"]] = "false";
+                            }
                         }
                     } else {
-                        headers.push(q["id"]);
+                        repeat[q["id"]] = r_d_actID[q["id"]];
                     }
                 }
-            } else {
-                for (const q of activity["questions"]) {
-                    headers.push(q["id"]);
-                }
-            }
-        }
-        return [headers, freeDrawActIDs, additionalQIDs, addBasedOnIDs];
-    }
-
-    getRepeatData(response) {
-        const repeatLatLon = {};
-        const repeatLonLat = {};
-        for (const surveyinfo in response) {
-            if (surveyinfo != 'detail') {
-                repeatLatLon[surveyinfo] = response[surveyinfo];
-                repeatLonLat[surveyinfo] = response[surveyinfo];
-            }
-        }
-        for (const activity of this.props.survey["activities"]) {
-            const actID = activity["id"];
-            if (actID != this.state.freeDrawActIDs) {
-                if (activity["type"] === 'map') {
-                    if (activity["function"] === 'predefined') {
-                        for (const q of activity["questions"]) {
-                            const feature = response["detail"][actID][q["id"]];
-                            if (feature["properties"]) {
-                                repeatLatLon[q["id"] + "-zoom"] = feature["properties"]["zoom"];
-                                repeatLonLat[q["id"] + "-zoom"] = feature["properties"]["zoom"];
-                            }
-
-                            const geometry = feature["geometry"];
-                            let resultLatLon = geometry["type"].toUpperCase() + "(";
-                            let resultLonLat = geometry["type"].toUpperCase() + "((";
-                            if (geometry["coordinates"].length !== 0) {
-                                for (const coord of geometry["coordinates"][0]) {
-                                    if (resultLatLon !== geometry["type"].toUpperCase() + "(") {
-                                        resultLatLon += ", ";
-                                        resultLonLat += ", ";
-                                    }
-                                    resultLatLon += "(" + coord[0] + ", " + coord[1] + ")";
-                                    resultLonLat += coord[1] + " " + coord[0];
-                                }
-                            }
-                            repeatLatLon[q["id"] + "-geometry"] = resultLatLon + ")";
-                            repeatLonLat[q["id"] + "-geometry"] = resultLonLat + "))";
-                            if (q.hasOwnProperty("questions")) {
-                                for (const formQ of q["questions"]) {
-                                    const qHeader = q["id"] + "-" + formQ["id"];
-                                    repeatLatLon[qHeader] = response["detail"][actID][q["id"]][formQ["id"]];
-                                    repeatLonLat[qHeader] = response["detail"][actID][q["id"]][formQ["id"]];
-                                }
-                            }
-                        }
-                    }
-                } else if (activity["type"] === 'form') {
+            } else if (activity["type"] === 'randomAudio') {
+                for (const audio of activity["audioFiles"]) {
+                    const filename = audio.slice(audio.lastIndexOf("/") + 1);
                     for (const q of activity["questions"]) {
                         if (q["type"] === "checkbox") {
                             for (const option of q["options"]) {
-                                repeatLatLon[option["id"]] = response["detail"][actID][option["id"]];
-                                repeatLonLat[option["id"]] = response["detail"][actID][option["id"]];
+                                const optHeader = filename + "-" + option["id"];
+                                if (option["id"] in r_d_actID[audio]) {
+                                    repeat[optHeader] = r_d_actID[audio][option["id"]];
+                                } else {
+                                    repeat[optHeader] = "false";
+                                }
                             }
                         } else {
-                            repeatLatLon[q["id"]] = response["detail"][actID][q["id"]];
-                            repeatLonLat[q["id"]] = response["detail"][actID][q["id"]];
+                            const qHeader = filename + "-" + q["id"];
+                            repeat[qHeader] = r_d_actID[audio][q["id"]];
                         }
                     }
-                } else {
-                    for (const q in activity["questions"]) {
-                        repeatLatLon[q["id"]] = response["detail"][actID][q["id"]];
-                        repeatLonLat[q["id"]] = response["detail"][actID][q["id"]];
-                    }
+                    const orderHeader = filename + "-random_order_num";
+                    repeat[orderHeader] = r_d_actID[audio]["random_order_num"];
                 }
             }
         }
-        return [ repeatLatLon, repeatLonLat ];
+        return repeat;
     }
 
-    formatTabular(headers, freeDrawActIDs, additionalQIDs, addBasedOnIDs) {
+    getGeometry(arr1, arr2, id, resp, hdr) {
+        if (id.startsWith(hdr.split('-geometry')[0])) {
+            const geometry = resp["geometry"];
+            let resultLatLon = geometry["type"].toUpperCase() + "(";
+            let resultLonLat = geometry["type"].toUpperCase() + "(";
+            if (geometry["coordinates"].length !== 0) {
+                for (const coord of geometry["coordinates"][0]) {
+                    if (resultLatLon !== geometry["type"].toUpperCase() + "(") {
+                        resultLatLon += ", ";
+                        resultLonLat += ", ";
+                    }
+                    resultLatLon += "(" + coord[0] + ", " + coord[1] + ")";
+                    resultLonLat += coord[1] + " " + coord[0];
+                }
+            }
+            arr1.push(resultLatLon + ")");
+            arr2.push(resultLonLat + ")");
+        } else {
+            this.pushTwice(arr1, arr2, "");
+        }
+    }
+
+    getZoom(arr1, arr2, id, resp, hdr) {
+        if (id.startsWith(hdr.split('-zoom')[0])) {
+            if (resp["properties"]) {
+                this.pushTwice(arr1, arr2, resp["properties"]["zoom"]);
+            } else {
+                this.pushTwice(arr1, arr2, "");
+            }
+        } else {
+            this.pushTwice(arr1, arr2, "");
+        }
+    }
+
+    pushTwice(arr1, arr2, data) {
+        arr1.push(data);
+        arr2.push(data);
+    }
+
+    formatTabular() {
         const latLon = [];
         const lonLat = [];
 
@@ -209,99 +224,81 @@ class OutputFormatter extends Component {
         for (const response of this.props.responses) {
             // For each response, get data that is repeated on each row
 
-            const [repeatLatLon, repeatLonLat] = this.getRepeatData(response);
+            const curr_repeat = this.getRepeatData(response);
             //console.log("Repeat info");
             //console.log(repeatData);
 
-            // For each freedraw object submitted in the current response,
-            // create the row with the repeated information, the freedraw
-            // object, and any additional responses based on the freedraw
-            // object.
-            if (freeDrawActIDs.length === 0) {
+            // For each freedraw object submitted in the current response, create
+            // the row with the repeated information, the freedraw object,
+            // and any additional responses based on the freedraw object.
+            if (this.state.freeDrawActIDs.length === 0 && this.state.predefinedIDs.length === 0) {
                 const currRowLatLon = [];
                 const currRowLonLat = [];
-                for (const header of headers) {
-                    if (header in repeatLatLon) {
-                        currRowLatLon.push(repeatLatLon[header]);
-                        currRowLonLat.push(repeatLonLat[header]);
+                for (const header of this.state.headers) {
+                    if (header in curr_repeat) {
+                        this.pushTwice(currRowLatLon, currRowLonLat, curr_repeat[header]);
                     } else {
-                        currRowLatLon.push("ERROR-unhandled");
-                        currRowLonLat.push("ERROR-unhandled");
+                        this.pushTwice(currRowLatLon, currRowLonLat, "ERROR-unhandled");
                     }
                 }
                 latLon.push(currRowLatLon);
                 lonLat.push(currRowLonLat);
             } else {
-                for (const fidx in freeDrawActIDs) {
-                    const fdAct = response["detail"][freeDrawActIDs[fidx]];
+                for (const preidx in this.state.predefinedIDs) {
+                    const preAct = response["detail"][this.state.predefinedIDs[preidx]];
+                    for (const preRID in preAct) {
+                        const preResp = preAct[preRID];
+                        const currRowLatLon = [];
+                        const currRowLonLat = [];
+                        for (const header of this.state.headers) {
+                            if (header in curr_repeat) {
+                                this.pushTwice(currRowLatLon, currRowLonLat, curr_repeat[header]);
+                            } else if (header.endsWith("-zoom")) {
+                                this.getZoom(currRowLatLon, currRowLonLat, preRID, preResp, header)
+                            } else if (header.endsWith("-geometry")) {
+                                this.getGeometry(currRowLatLon, currRowLonLat, preRID, preResp, header)
+                            } else if (header.startsWith(preRID)) {
+                                const qID = header.split(preRID + "-")[1];
+                                this.pushTwice(currRowLatLon, currRowLonLat, preResp[qID]);
+                            } else {
+                                this.pushTwice(currRowLatLon, currRowLonLat, "");
+                            }
+                        }
+                        latLon.push(currRowLatLon);
+                        lonLat.push(currRowLonLat);
+                    }
+                }
+                for (const fidx in this.state.freeDrawActIDs) {
+                    const fdAct = response["detail"][this.state.freeDrawActIDs[fidx]];
                     for (const fdRID in fdAct) {
                         const fdResp = fdAct[fdRID];
                         const currRowLatLon = [];
                         const currRowLonLat = [];
-                        for (const hidx in headers) {
-                            const header = headers[hidx];
-                            if (header in repeatLatLon) {
-                                // everything except freedraw and additional
-                                currRowLatLon.push(repeatLatLon[header]);
-                                currRowLonLat.push(repeatLonLat[header]);
+                        for (const header of this.state.headers) {
+                            if (header in curr_repeat) {
+                                this.pushTwice(currRowLatLon, currRowLonLat, curr_repeat[header]);
                             } else if (header.endsWith("-name")) {
                                 // freedraw obj name
                                 if (fdRID.startsWith(header.split('-name')[0])) {
-                                    currRowLatLon.push(fdResp["name"]);
-                                    currRowLonLat.push(fdResp["name"]);
+                                    this.pushTwice(currRowLatLon, currRowLonLat, fdResp["name"]);
                                 } else {
-                                    currRowLatLon.push(" ");
-                                    currRowLonLat.push(" ");
+                                    this.pushTwice(currRowLatLon, currRowLonLat, "");
                                 }
                             } else if (header.endsWith("-zoom")) {
-                                if (fdRID.startsWith(header.split('-zoom')[0])) {
-                                    if (fdResp["properties"]) {
-                                        currRowLatLon.push(fdResp["properties"]["zoom"]);
-                                        currRowLonLat.push(fdResp["properties"]["zoom"]);
-                                    } else {
-                                        currRowLatLon.push(" ");
-                                        currRowLonLat.push(" ");
-                                    }
-                                } else {
-                                    currRowLatLon.push(" ");
-                                    currRowLonLat.push(" ");
-                                }
+                                this.getZoom(currRowLatLon, currRowLonLat, fdRID, fdResp, header)
                             } else if (header.endsWith("-geometry")) {
-                                // freedraw coords
-                                if (fdRID.startsWith(header.split('-geometry')[0])) {
-                                    const geometry = fdResp["geometry"];
-                                    let resultLatLon = geometry["type"].toUpperCase() + "(";
-                                    let resultLonLat = geometry["type"].toUpperCase() + "((";
-                                    if (geometry["coordinates"].length !== 0) {
-                                        for (const coord of geometry["coordinates"][0]) {
-                                            if (resultLatLon !== geometry["type"].toUpperCase() + "(") {
-                                                resultLatLon += ", ";
-                                                resultLonLat += ", ";
-                                            }
-                                            resultLatLon += "(" + coord[0] + ", " + coord[1] + ")";
-                                            resultLonLat += coord[1] + " " + coord[0];
-                                        }
-                                    }
-                                    currRowLatLon.push(resultLatLon + ")");
-                                    currRowLonLat.push(resultLonLat + "))");
-                                } else {
-                                    currRowLatLon.push(" ");
-                                    currRowLonLat.push(" ");
-                                }
-                            } else if (header in additionalQIDs) {
+                                this.getGeometry(currRowLatLon, currRowLonLat, fdRID, fdResp, header)
+                            } else if (header in this.state.additionalQIDs) {
                                 // freedraw id info for each additional if has
                                 // curr freeDraw activity
-                                const addActID = additionalQIDs[header];
-                                if (fdRID.startsWith(addBasedOnIDs[header])) {
-                                    currRowLatLon.push(response["detail"][addActID][fdRID][header]);
-                                    currRowLonLat.push(response["detail"][addActID][fdRID][header]);
+                                const addActID = this.state.additionalQIDs[header];
+                                if (fdRID.startsWith(this.state.addBasedOnIDs[header])) {
+                                    this.pushTwice(currRowLatLon, currRowLonLat, response["detail"][addActID][fdRID][header.split("add-")[1]]);
                                 } else {
-                                    currRowLatLon.push(" ");
-                                    currRowLonLat.push(" ");
+                                    this.pushTwice(currRowLatLon, currRowLonLat, "");
                                 }
                             } else {
-                                currRowLatLon.push("unhandled survey data");
-                                currRowLonLat.push("unhandled survey data");
+                                this.pushTwice(currRowLatLon, currRowLonLat, "");
                             }
                         }
                         latLon.push(currRowLatLon);
@@ -311,64 +308,170 @@ class OutputFormatter extends Component {
             }
         }
         this.setState({
-            headers: headers,
+            ...this.state,
             rowsLatLon: latLon,
             rowsLonLat: lonLat,
+            tab_loaded: true
+        });
+        return null;
+    }
+
+
+    formatGeoJSON() {
+        const pre_geojson = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+
+        const fd_geojson = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+
+        const fd_headers = [];
+        for (const header of this.state.headers) {
+            let id;
+            if (header.endsWith("-name")) {
+                id = header.split("-name")[0];
+            } else if (header.endsWith("-geometry")) {
+                id = header.split("-geometry")[0];
+            } else if (header.endsWith("-zoom")) {
+                id = header.split("-zoom")[0];
+            }
+            if (this.state.freeDrawActIDs.includes(id)) {
+                fd_headers.push(header);
+            }
+        }
+
+        let format;
+        if (this.state.currToggle === 'LatLon') {
+            format = this.state.rowsLatLon;
+                } else {
+                        format = this.state.rowsLonLat;
+                }
+        for (const row of format) {
+            let type = "pre";
+            const feature = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": []
+                },
+                "properties": {}
+            }
+            for (const col_index in row) {
+                const curr_header = this.state.headers[col_index];
+                const cell_info = row[col_index];
+                if (cell_info) {
+                    const cell = cell_info.toString();
+                    if (cell.startsWith("POLYGON")) {
+                        const coordinates = [];
+                        const geom = cell.slice(8, -1);
+                        let split;
+                        if (this.state.currToggle === "LatLon") {
+                            split = geom.slice(1, -1).split("), (");
+                        } else {
+                            split = geom.split(", ");
+                        }
+                        for (const coords of split) {
+                            const curr_coord = [];
+                            const split_coord = coords.split(" ");
+                            curr_coord.push(parseFloat(split_coord[0]));
+                            curr_coord.push(parseFloat(split_coord[1]));
+                            coordinates.push(curr_coord);
+                        }
+                        feature["geometry"]["coordinates"].push(coordinates);
+                        if (fd_headers.includes(curr_header)) {
+                            type = "fd";
+                        }
+                    } else {
+                        feature["properties"][curr_header] = cell;
+                    }
+                }
+            }
+            if (type === "pre") {
+                pre_geojson["features"].push(feature);
+            } else {
+                fd_geojson["features"].push(feature);
+            }
+        }
+        this.setState({
+            ...this.state,
+            pre_geoJSON: pre_geojson,
+            fd_geoJSON: fd_geojson,
+            gis_loaded: true
         });
         return null;
     }
 
     render() {
         const { responses } = this.props;
-        const { headers, rowsLatLon, rowsLonLat } = this.state;
+        const { headers, rowsLatLon, rowsLonLat, h_loaded, tab_loaded, gis_loaded, currToggle } = this.state;
         const radios = [
-            {name: '((LAT, LON))', value: 'LatLon'},
-            {name: '((LON LAT))', value: 'LonLat'}
+            {name: '(LAT, LON)', value: 'LatLon'},
+            {name: 'LON LAT', value: 'LonLat'}
         ];
+        var surveyname;
+        if (h_loaded && !tab_loaded) {
+            this.formatTabular();
+        }
+        if (tab_loaded && !gis_loaded) {
+            this.formatGeoJSON();
+        }
+        if (responses.length > 0) {
+            surveyname = responses[0]["survey"];
+        }
+        var currData;
+        if (currToggle === 'LatLon') {
+            currData = rowsLatLon;
+        } else {
+            currData = rowsLonLat;
+        }
 
         return (
             <Container fluid>
+                <Row>
+                    <Col>
+                        <ExportButtons
+                            surveyname={surveyname}
+                            responses={responses}
+                            currData={currData}
+                            headers={headers}
+                            pre_geoJSON={this.state.pre_geoJSON}
+                            fd_geoJSON={this.state.fd_geoJSON}
+                        />
+                    </Col>
+                    <Col>
+                        <Form>
+                            <Form.Group key="radio-format">
+                                <Form.Label>Select Polygon Format</Form.Label>
+                                <div key="format-div" className="mb-3">
+                                    {radios.map((radio, idx) => (
+                                        <Form.Check
+                                            inline
+                                            type="radio"
+                                            key={idx}
+                                            id={`radio-${idx}`}
+                                            value={radio.value}
+                                            label={radio.name}
+                                            checked={currToggle === radio.value}
+                                            onChange={(event) =>
+                                                this.setState({currToggle: event.target.value})
+                                            }
+                                        />
+                                    ))}
+                                </div>
+                            </Form.Group>
+                        </Form>
+                    </Col>
+                </Row>
+                <Row>
+                    <p>ArcGIS usually requires a longitude-latitude (LON LAT) Polygon format. Please double check what format you need before downloading the data.</p>
+                    <p>Polygon coordinates are truncated in the table view and exported in their entirety in all formats.</p>
+                </Row>
                 <Suspense fallback={<Loading />}>
                     <Row>
-                        <Col>
-                            <div class="export">
-                                <Button variant="primary" onClick={() => this.dataExport("Export.json", "text/json")}>
-                                    Export JSON file
-                                </Button>
-                                <Button variant="primary" onClick={() => this.dataExport("Export.txt", "text")}>
-                                    Export text file
-                                </Button>
-                                <Button variant="primary" onClick={() => this.dataExport("Export.tsv", "text/tab-separated-values")}>
-                                    Export TSV file
-                                </Button>
-                            </div>
-                        </Col>
-                        <Col>
-                            <Form>
-                                <Form.Group key="radio-format">
-                                    <Form.Label>Select Polygon Format</Form.Label>
-                                    <div key="format-div" className="mb-3">
-                                        {radios.map((radio, idx) => (
-                                            <Form.Check
-                                                inline
-                                                type="radio"
-                                                key={idx}
-                                                id={`radio-${idx}`}
-                                                value={radio.value}
-                                                label={radio.name}
-                                                checked={this.state.currToggle === radio.value}
-                                                onChange={(event) =>
-                                                    this.setState({currToggle: event.target.value})
-                                                }
-                                            />
-                                        ))}
-                                    </div>
-                                </Form.Group>
-                            </Form>
-                        </Col>
-                    </Row>
-                    <Row>
-                        { headers.length !== 0 && rowsLatLon.length!== 0 && (
+                        { tab_loaded && (
                             <div class="table-responsive-outer">
                                 <Table key="ResponsesTable" class="table-striped" responsive striped>
                                     <thead>
@@ -381,29 +484,18 @@ class OutputFormatter extends Component {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        { this.state.currToggle === 'LatLon' ? (
-                                            rowsLatLon.map((row) => (
-                                                <tr key={rowsLatLon.indexOf(row)}>
+                                        { currData.map((row) => (
+                                                <tr key={currData.indexOf(row)}>
                                                     {Array.from(row).map((cell) => (
-                                                        <td key={`${rowsLatLon.indexOf(row)}-` + headers[Array.from(row).indexOf(cell)]}>
-                                                            {cell}
+                                                        <td key={`${currData.indexOf(row)}-` + headers[Array.from(row).indexOf(cell)]}>
+                                                            { cell && cell.length > 50 ? (
+                                                                cell.substring(0, 50) + "..."
+                                                            ) : (cell)}
                                                         </td>
                                                     ))
                                                     }
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            rowsLonLat.map((row) => (
-                                                <tr key={rowsLonLat.indexOf(row)}>
-                                                    {Array.from(row).map((cell) => (
-                                                        <td key={`${rowsLonLat.indexOf(row)}-` + headers[Array.from(row).indexOf(cell)]}>
-                                                            {cell}
-                                                        </td>
-                                                    ))
-                                                    }
-                                                </tr>
-                                            ))
-                                        )}
+                                                </tr>))
+                                        }
                                     </tbody>
                                 </Table>
                             </div>
