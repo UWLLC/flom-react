@@ -11,6 +11,7 @@ const MapQuestion = function MapQuestion({
   values,
   fireDraw,
   onChange,
+  reset,
   updateQuestionID,
   changeGIS,
   onFinish,
@@ -20,15 +21,24 @@ const MapQuestion = function MapQuestion({
 
   const initQuestions = () => {
     let result = activity.questions;
+    var prompt = "Name this area";
+    if (activity.prompt) {
+        prompt = activity.prompt;
+    }
+
+    var cardTitle = "Draw New Area";
+    if (activity.cardTitle) {
+        cardTitle = activity.cardTitle;
+    }
 
     if (activity.function === 'freedraw') {
       result = [
         {
-          title: 'Draw New Area',
+          title: cardTitle,
           id: activity.id + index,
           questions: [
             {
-              title: 'Name this area',
+              title: prompt,
               type: 'text',
               id: 'name',
             },
@@ -50,6 +60,7 @@ const MapQuestion = function MapQuestion({
               title: `About ${area.name}`,
               id,
               geometry: area.geometry,
+              properties: area.properties,
               questions: activity.questions,
             },
           ])
@@ -67,22 +78,32 @@ const MapQuestion = function MapQuestion({
 
   const addMapQuestion = () => {
     const newIndex = index + 1;
+    var prompt = "Name this area";
+    if (activity.prompt) {
+        prompt = activity.prompt;
+    }
+
+    var cardTitle = "Draw New Area";
+    if (activity.cardTitle) {
+        cardTitle = activity.cardTitle;
+    }
 
     setIndex(newIndex);
     setQuestions([
       ...questions,
       {
-        title: 'Draw New Area',
+        title: cardTitle,
         id: activity.id + newIndex,
         questions: [
           {
-            title: 'Name this area',
+            title: prompt,
             type: 'text',
             id: 'name',
           },
         ],
       },
     ]);
+    reset();
     setComplete(false);
   };
 
@@ -122,7 +143,7 @@ const MapQuestion = function MapQuestion({
             <Row>
               <Col align="center">
                 <Button variant="primary" onClick={onFinish}>
-                  Next
+                  { activity.buttonText ? activity.buttonText : "Next" }
                 </Button>
               </Col>
             </Row>
@@ -143,6 +164,10 @@ const MapQuestion = function MapQuestion({
               changeGIS={changeGIS}
               onFinish={nextQuestion}
               mode={mode}
+              reset={reset}
+              buttonText={activity.buttonText}
+              playText={activity.playText}
+              pauseText={activity.pauseText}
             />
           </Card.Body>
         </Card>

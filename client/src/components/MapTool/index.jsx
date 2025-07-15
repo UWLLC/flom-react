@@ -1,14 +1,15 @@
-import { useRef, useCallback, useMemo, useEffect } from 'react';
+import { useRef, useCallback, useMemo, useEffect, useState } from 'react';
 import { map } from 'lodash';
-import { MapContainer, TileLayer, Marker, Popup, Polygon, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, useMap, useMapEvents } from 'react-leaflet';
 import Freedraw, { CREATE, NONE } from 'react-leaflet-freedraw';
 import PropTypes from 'prop-types';
 
-export const polygonFromLatLngs = (latLngs) => ({
+export const polygonFromLatLngs = (latLngs, zoomLevel) => ({
     type: 'polygon',
     geometry: map(latLngs, (shape) =>
         map(shape, (point) => [point.lat, point.lng])
     ),
+    zoom: zoomLevel,
 });
 
 function currentMode(mode) {
@@ -18,17 +19,53 @@ function currentMode(mode) {
     return NONE;
 }
 
-function MapTool({ tileURL, tileAttribution, mode, onFeatureDrawn, objects, zoom, center }) {
+function MapTool({ tileURL,
+    tileAttribution,
+    mode,
+    onFeatureDrawn,
+    objects,
+    zoom,
+    minZoom,
+    maxZoom,
+    center,
+    updateView }) {
+
     const freedrawRef = useRef(null);
 
     const handleMarkersDraw = useCallback((event) => {
         if (event.eventType !== 'clear') {
             if (event.latLngs !== undefined || event.latLngs.length !== 0) {
-                onFeatureDrawn(polygonFromLatLngs(event.latLngs));
+                onFeatureDrawn(polygonFromLatLngs(event.latLngs, zoom));
                 freedrawRef.current.clear();
             }
         }
-    }, []);
+    }, [zoom]);
+
+    const ViewTracker = () => {
+        const map = useMapEvents({
+            moveend() {
+                //const map = mapRef.current;
+                if (map != null) {
+                    //console.log('MOVEEND detected');
+                    const currCenter = map.getCenter();
+                    const currZoom = map.getZoom();
+                    //console.log(currCenter);
+                    updateView(currCenter, currZoom);
+                }
+            },
+            zoomend() {
+                if (map != null) {
+                    //console.log('ZOOMEND detected');
+                    const currCenter = map.getCenter();
+                    const currZoom = map.getZoom();
+                    //console.log(currZoom);
+                    updateView(currCenter, currZoom);
+                }
+            },
+        });
+
+        return null;
+    };
 
     const handlers = useMemo(
         () => ({
@@ -50,8 +87,10 @@ function MapTool({ tileURL, tileAttribution, mode, onFeatureDrawn, objects, zoom
             dragging={false}
             center={center}
             zoom={zoom}
+            minZoom={minZoom}
+            maxZoom={maxZoom}
             scrollWheelZoom={false}
-            zoomControl={false}
+            zoomControl={minZoom || maxZoom}
             doubleClickZoom={false}
             touchZoom={false}
             tap={false}
@@ -74,6 +113,7 @@ function MapTool({ tileURL, tileAttribution, mode, onFeatureDrawn, objects, zoom
                 />
             ))}
             <SetView />
+            <ViewTracker />
         </MapContainer>
     );
 }

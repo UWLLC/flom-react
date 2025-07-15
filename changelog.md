@@ -242,6 +242,7 @@ Some relevant stack overflow docs:
 * Fixed `client/src/components/IntroRender/index.jsx` and `client/src/pages/Survey/index.jsx` so they now use the startText property as given in a survey definition
 
 ## 7/2025
+Random Audio Activity
 * Updated `client/src/components/OutputFormatter` to output in GeoJSON format to allow for porting survey response data to ArcGIS and other visualization systems
 * Updated `client/src/components/OutputFormatter` and created `client/src/components/ExportButtons` to clean up code
 * Created `client/src/components/RandomAudioRender` for new Random Audio Activity type
@@ -252,3 +253,15 @@ Some relevant stack overflow docs:
 * Specified `mode: cors` in the audio data upload in `client/src/services/api.js`
 * Changed the Cross Origin Resource Policy in `server/index.js`
 * Fixed typo in `server/routes/upload.js` (req.file not req.files, even if multiple files passed)
+
+Redraw Function
+* Added button to allow participants to redraw their polygons in `client/src/components/MapRender/index.jsx`
+* Added button to allow participants to exit out of draw mode in `client/src/components/MapRender/index.jsx`
+* Updated the map functions to allow participants to move the center of the map and enabled zoom restriction settings in the survey definition
+  * Updated response data and response visualizations to show the zoom level the participant was on when the response was submitted
+  * `client/src/components/OutputFormatter`
+  * `client/src/components/MapRender/index.jsx`
+  * `client/src/components/MapTool/index.jsx`
+  * `client/src/components/MapQuestion/index.jsx`
+  * `client/src/components/QuestionPanel/index.jsx`
+  

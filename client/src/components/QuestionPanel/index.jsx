@@ -15,11 +15,16 @@ function QuestionPanel({
   changeGIS,
   onFinish,
   mode,
+  reset,
+  buttonText,
+  playText,
+  pauseText
 }) {
   useEffect(() => {
     if (noDraw) {
       onChange(question.id, {});
-      const area = { geometry: question.geometry };
+      const area = { geometry: question.geometry,
+                     properties: question.properties };
       changeGIS(area);
     }
   }, [noDraw]);
@@ -31,6 +36,7 @@ function QuestionPanel({
     }
     currentResponse[questionID] = response;
     onChange(question.id, currentResponse);
+    reset();
   };
 
   const fire = () => {
@@ -59,6 +65,9 @@ function QuestionPanel({
             onChange={onFormItemChange}
             values={values[question.id]}
             onFinish={onFinish}
+            buttonText={buttonText}
+            playText={playText}
+            pauseText={pauseText}
           />
         </Suspense>
       )}
