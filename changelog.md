@@ -253,6 +253,7 @@ Random Audio Activity
 * Specified `mode: cors` in the audio data upload in `client/src/services/api.js`
 * Changed the Cross Origin Resource Policy in `server/index.js`
 * Fixed typo in `server/routes/upload.js` (req.file not req.files, even if multiple files passed)
+* Updated `client/src/pages/Survey` to handle Random Audio Activity type
 
 Redraw Function
 * Added button to allow participants to redraw their polygons in `client/src/components/MapRender/index.jsx`
@@ -264,4 +265,8 @@ Redraw Function
   * `client/src/components/MapTool/index.jsx`
   * `client/src/components/MapQuestion/index.jsx`
   * `client/src/components/QuestionPanel/index.jsx`
-  
+
+Confirmation Modal
+* Added `client/src/components/ConfirmationModal`
+  * Updated to `client/src/pages/Survey/index.jsx` to use confirmation modal
+  * I've made the pop up optional so if you have any one of the four confirmation properties set ("confirmationText", "confirmationTitle", "cancelButton", or "confirmButton"), the pop up will show for that activity. If you don't set one of those properties, there will be no pop up. If you only set one, two or three of the properties, default text will be used for the properties that weren't specified. Here's the default text I have created (let me know if you want the defaults changed):

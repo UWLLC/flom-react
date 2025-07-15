@@ -10,6 +10,8 @@ const FormRender = lazy(() => import('../../components/FormRender'));
 const EndRender = lazy(() => import('../../components/EndRender'));
 const MapPage = lazy(() => import('../../components/MapRender'));
 const Result = lazy(() => import('../../components/Result'));
+const ConfirmationModal = lazy(() => import('../../components/ConfirmationModal'));
+const RandomAudioRender = lazy(() => import('../../components/RandomAudioRender'));
 
 
 function Survey(props) {
@@ -30,12 +32,13 @@ function Survey(props) {
     }
 //console.log(surveyId);
     const [runSurvey, setRunSurvey] = useState(initialState);
+    const [showModal, setShowModal] = useState(false);
     useEffect(() => {
 
         getSurvey(surveyId)
             .then((res) => {
-                //console.log(res[0].detail);           
-                setRunSurvey(setRunSurvey => ({...runSurvey, 
+                //console.log(res[0].detail);
+                setRunSurvey(setRunSurvey => ({...runSurvey,
                   surveyDefinition: res[0].detail,
                   currentPage: 0,
                   surveyLength: res[0].detail.activities.length,
@@ -76,7 +79,11 @@ function Survey(props) {
         return runSurvey.response;
     }
 
+    const handleClose = () => setShowModal(false);
+    const handleOpen = () => setShowModal(true);
+
     const next = () => {
+        handleClose();
         const { currentPage: currentPage1 } = runSurvey;
         const currentPage = currentPage1 + 1;
         setRunSurvey(setRunSurvey => ({...runSurvey, currentPage: currentPage }));
@@ -132,6 +139,57 @@ function Survey(props) {
     const currentActivity = getActivity();
     const currentResponse = getResponse(currentActivity.id);
 
+    const useConfirm = () => {
+        return currentActivity.confirmationTitle ||
+                currentActivity.confirmationText ||
+                currentActivity.cancelButton ||
+                currentActivity.confirmButton;
+    }
+
+    const confirmed = useConfirm();
+
+    if (currentActivity.type === 'randomAudio') {
+        return (
+            <Suspense fallback={<Loading />}>
+                <PageRender
+                    id={currentActivity.id}
+                    current={runSurvey.currentPage + 1}
+                    length={runSurvey.surveyLength}
+                    title={currentActivity.title}
+                    intro={currentActivity.intro}
+                    progress
+                >
+                { confirmed ? (
+                    <div>
+                        <RandomAudioRender
+                            activity={currentActivity}
+                            onChange={updateResponse}
+                            values={currentResponse}
+                            onFinish={handleOpen}
+                        />
+                        <ConfirmationModal
+                            show={showModal}
+                            close={handleClose}
+                            confirmationTitle={currentActivity.confirmationTitle}
+                            confirmationText={currentActivity.confirmationText}
+                            cancelButton={currentActivity.cancelButton}
+                            confirmButton={currentActivity.confirmButton}
+                            onFinish={next}
+                        />
+                    </div>
+                 ) : (
+                     <RandomAudioRender
+                        activity={currentActivity}
+                        onChange={updateResponse}
+                        values={currentResponse}
+                        onFinish={next}
+                    />
+                    )
+                }
+                </PageRender>
+            </Suspense>
+        );
+    }
     if (currentActivity.type === 'form') {
       //console.log(currentActivity.type)
         return (
@@ -144,12 +202,35 @@ function Survey(props) {
                     intro={currentActivity.intro}
                     progress
                 >
+                { confirmed ? (
+                    <div>
+                        <FormRender
+                            questions={currentActivity.questions}
+                            buttonText={currentActivity.buttonText}
+                            onChange={updateResponse}
+                            values={currentResponse}
+                            onFinish={handleOpen}
+                        />
+                        <ConfirmationModal
+                            show={showModal}
+                            close={handleClose}
+                            confirmationTitle={currentActivity.confirmationTitle}
+                            confirmationText={currentActivity.confirmationText}
+                            cancelButton={currentActivity.cancelButton}
+                            confirmButton={currentActivity.confirmButton}
+                            onFinish={next}
+                        />
+                    </div>
+                ) : (
                     <FormRender
                         questions={currentActivity.questions}
+                        buttonText={currentActivity.buttonText}
                         onChange={updateResponse}
                         values={currentResponse}
                         onFinish={next}
                     />
+                )
+                }
                 </PageRender>
             </Suspense>
         );
@@ -158,17 +239,43 @@ function Survey(props) {
       //console.log(currentActivity.type)
         return (
             <Suspense fallback={<Loading />}>
-                <MapPage
-                    key="MapPage"
-                    activity={currentActivity}
-                    onChange={updateResponse}
-                    onFinish={next}
-                    values={currentResponse}
-                    current={runSurvey.currentPage + 1}
-                    length={runSurvey.surveyLength}
-                    isComplete={isComplete}
-                    progress
-                />
+                { confirmed ? (
+                <Suspense fallback={<Loading />}>
+                    <MapPage
+                        key="MapPage"
+                        activity={currentActivity}
+                        onChange={updateResponse}
+                        onFinish={handleOpen}
+                        values={currentResponse}
+                        current={runSurvey.currentPage + 1}
+                        length={runSurvey.surveyLength}
+                        isComplete={isComplete}
+                        progress
+                    />
+                    <ConfirmationModal
+                        show={showModal}
+                        close={handleClose}
+                        confirmationTitle={currentActivity.confirmationTitle}
+                        confirmationText={currentActivity.confirmationText}
+                        cancelButton={currentActivity.cancelButton}
+                        confirmButton={currentActivity.confirmButton}
+                        onFinish={next}
+                    />
+                </Suspense>
+                ) : (
+                    <MapPage
+                        key="MapPage"
+                        activity={currentActivity}
+                        onChange={updateResponse}
+                        onFinish={next}
+                        values={currentResponse}
+                        current={runSurvey.currentPage + 1}
+                        length={runSurvey.surveyLength}
+                        isComplete={isComplete}
+                        progress
+                    />
+                   )
+                   }
             </Suspense>
         );
     }
