@@ -250,9 +250,11 @@ Random Audio Activity
 * Updated `client/src/components/OutputFormatter` to handle Random Audio Activity data
 * Updated `client/src/components/FormRender` to allow questions to be required, to pass play/pause button labels to AudioLabels, and fixed radio button selection bug (click on radio option text resulted in selection of first option, no matter which option text was clicked due to id assignment)
 * Updated `client/src/components/AudioButton` to allow play/pause button labels to be defined in the survey definition
+* Updated `client/src/components/QuestionPanel` to pass play/pause button labels as defined in the survey definition
 * Specified `mode: cors` in the audio data upload in `client/src/services/api.js`
-* Changed the Cross Origin Resource Policy in `server/index.js`
+* Changed the Cross Origin Resource Policy in `server/index.js` and set Access-Control-Allow-Credentials to `true`
 * Fixed typo in `server/routes/upload.js` (req.file not req.files, even if multiple files passed)
+* Updated `client/nginx.conf` to include path to `/static/audio`
 * Updated `client/src/pages/Survey` to handle Random Audio Activity type
 
 Redraw Function
