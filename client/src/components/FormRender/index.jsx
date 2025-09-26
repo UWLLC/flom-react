@@ -86,7 +86,12 @@ const handleChange = (event) => {
         if (question.type === 'text') {
           return (
             <Form.Group className="mb-3" key={question.id}>
-              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
+              <Label 
+                label={question.title} 
+                audio={question.audio} 
+                required={question.required} 
+                play={playText} 
+                pause={pauseText}/>
               <Form.Control
                 type="text"
                 id={question.id}
@@ -98,7 +103,12 @@ const handleChange = (event) => {
         if (question.type === 'select') {
           return (
             <Form.Group className="mb-3" key={question.id}>
-              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
+              <Label 
+                label={question.title} 
+                audio={question.audio} 
+                required={question.required} 
+                play={playText} 
+                pause={pauseText}/>
               <Form.Select
                 aria-label={question.title}
                 id={question.id}
@@ -125,7 +135,12 @@ const handleChange = (event) => {
         if (question.type === 'rate') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
+              <Label 
+                label={question.title} 
+                audio={question.audio} 
+                required={question.required} 
+                play={playText} 
+                pause={pauseText}/>
               <Form.Range id={question.id} onChange={handleChange} />
                 {question.least && question.best && (
                     <Container>
@@ -145,7 +160,12 @@ const handleChange = (event) => {
         if (question.type === 'num') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
+              <Label 
+                label={question.title} 
+                audio={question.audio} 
+                required={question.required} 
+                play={playText} 
+                pause={pauseText}/>
               <Form.Control
                 type="number"
                 id={question.id}
@@ -157,7 +177,12 @@ const handleChange = (event) => {
         if (question.type === 'textarea') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
+              <Label 
+                label={question.title} 
+                audio={question.audio} 
+                required={question.required} 
+                play={playText} 
+                pause={pauseText}/>
               <Form.Control
                 type="textarea"
                 id={question.id}
@@ -170,7 +195,12 @@ const handleChange = (event) => {
               //console.log(JSON.stringify(inputs))
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
+              <Label 
+                label={question.title} 
+                audio={question.audio} 
+                required={question.required} 
+                play={playText} 
+                pause={pauseText}/>
               <div key={question.id} className="mb-3">
                 {question.options.map((option) => (
                   <Form.Check
@@ -191,7 +221,12 @@ const handleChange = (event) => {
           if (question.type === 'boolean') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
+              <Label 
+                label={question.title} 
+                audio={question.audio} 
+                required={question.required} 
+                play={playText} 
+                pause={pauseText}/>
               <div key={question.id} className="mb-3">
                 <Form.Check
                   inline
@@ -220,7 +255,12 @@ const handleChange = (event) => {
         if (question.type === 'checkbox') {
           return (
             <Form.Group key={question.id}>
-              <Label label={question.title} audio={question.audio} required={question.required} play={playText} pause={pauseText}/>
+              <Label 
+                label={question.title} 
+                audio={question.audio} 
+                required={question.required} 
+                play={playText} 
+                pause={pauseText}/>
               <div key={question.id} className="mb-3">
                 {question.options.map((option) => (
                   <Form.Check

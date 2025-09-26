@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import AudioButton from '../AudioButton';
 import FormRender from '../FormRender';
 
-const RandomAudioRender = function RandomAudioRender({ activity, values, onChange, onFinish }) {
+const RandomAudioRender = function RandomAudioRender({ activity, onChange, onFinish }) {
     const [randomized, setRandomized] = useState([]);
     const [index, setIndex] = useState(0);
     const [responses, setResponses] = useState({});

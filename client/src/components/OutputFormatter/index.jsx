@@ -119,8 +119,8 @@ class OutputFormatter extends Component {
             headers: headers,
             freeDrawActIDs: freeDrawActIDs,
             predefinedIDs: predefinedIDs,
-                    additionalQIDs: additionalQIDs,
-                    addBasedOnIDs: addBasedOnIDs,
+            additionalQIDs: additionalQIDs,
+            addBasedOnIDs: addBasedOnIDs,
             h_loaded: true
         });
     }

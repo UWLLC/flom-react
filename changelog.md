@@ -254,6 +254,7 @@ Random Audio Activity
 * Specified `mode: cors` in the audio data upload in `client/src/services/api.js`
 * Changed the Cross Origin Resource Policy in `server/index.js` and set Access-Control-Allow-Credentials to `true`
 * Fixed typo in `server/routes/upload.js` (req.file not req.files, even if multiple files passed)
+* Updated configuration in `server/routes/addSurvey.js`
 * Updated `client/nginx.conf` to include path to `/static/audio`
 * Updated `client/src/pages/Survey` to handle Random Audio Activity type
 

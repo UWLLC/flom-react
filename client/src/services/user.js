@@ -22,6 +22,8 @@ axios.interceptors.response.use(
 
 const surveyList = () => axios.get(`${API_URL}survey`, { headers: authHeader() })
 
+const userSurveys = () => axios.get(`${API_URL}usersurveys`, { headers: authHeader() })
+
 const surveyDetail = (id) => axios.get(`${API_URL}survey/${id}`, { headers: authHeader() })
 
 // const surveyResponseCount = (id) => axios.get(`${API_URL}responseCount/${id}`, { headers: authHeader() })
@@ -32,6 +34,7 @@ export default {
     //test,
     surveyList,
     surveyDetail,
+    userSurveys,
     //surveyResponseCount,
     surveyResponse,
 };

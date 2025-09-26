@@ -32,6 +32,21 @@ router.get('/survey', passport.authenticate('jwt', { session: false }), async (r
   res.status(200).json(rows);
 });
 
+// Getting user surveys
+router.get('/usersurveys', passport.authenticate('jwt', {session: false }), async(req, res) => {
+    const token = req.headers.authorization;
+    const verified = jwt.decode(token.split(' ')[1]);
+    //console.log('Verified:', verified);
+    const username = verified.user.userName;
+    //console.log('Username:', username);
+    const { rows } = await db.query('SELECT id, name, visibility_id, start_time, end_time FROM survey WHERE author =$1', [username]);    
+    await Promise.all(rows.map(async (survey) => {
+      const count = await db.query('SELECT COUNT(*) FROM response WHERE survey = $1', [survey.id]);
+      survey.responseCount = count.rows[0].count;
+    }));
+    res.status(200).json(rows);
+});
+
 // Getting specific survey based on surveyID
 router.get('/survey/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
     const { id } = req.params;
