@@ -164,7 +164,6 @@ function Survey(props) {
                         <RandomAudioRender
                             activity={currentActivity}
                             onChange={updateResponse}
-                            values={currentResponse}
                             onFinish={handleOpen}
                         />
                         <ConfirmationModal
@@ -181,7 +180,6 @@ function Survey(props) {
                      <RandomAudioRender
                         activity={currentActivity}
                         onChange={updateResponse}
-                        values={currentResponse}
                         onFinish={next}
                     />
                     )
@@ -207,6 +205,9 @@ function Survey(props) {
                         <FormRender
                             questions={currentActivity.questions}
                             buttonText={currentActivity.buttonText}
+                            requiredError={currentActivity.requiredError}
+                            playText={currentActivity.playText}
+                            pauseText={currentActivity.pauseText}
                             onChange={updateResponse}
                             values={currentResponse}
                             onFinish={handleOpen}
@@ -225,6 +226,9 @@ function Survey(props) {
                     <FormRender
                         questions={currentActivity.questions}
                         buttonText={currentActivity.buttonText}
+                        requiredError={currentActivity.requiredError}
+                        playText={currentActivity.playText}
+                        pauseText={currentActivity.pauseText}
                         onChange={updateResponse}
                         values={currentResponse}
                         onFinish={next}

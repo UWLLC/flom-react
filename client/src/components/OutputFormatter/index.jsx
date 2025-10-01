@@ -14,6 +14,7 @@ class OutputFormatter extends Component {
             rowsLonLat: [],
             freeDrawActIDs: [],
             predefinedIDs: [],
+            randomAudioIDs: [],
             additionalQIDs: {},
             addBasedOnIDs: {},
             pre_geoJSON: {},
@@ -73,6 +74,7 @@ class OutputFormatter extends Component {
 
         const freeDrawActIDs = [];
         const predefinedIDs = [];
+        const randomAudioIDs = [];
         const additionalQIDs = {};
         const addBasedOnIDs = {}; // addQID: basedOnID
         for (const activity of this.props.survey["activities"]) { //this.survey["activities"]) {
@@ -103,11 +105,24 @@ class OutputFormatter extends Component {
                     console.log("unsupported map type");
                 }
             } else if (activity["type"] === 'randomAudio') { // START HERE
-                for (const audio of activity["audioFiles"]) {
-                    const filename = audio.slice(audio.lastIndexOf("/") + 1);
-                    const h = this.formatQuestionsHeaders(activity["questions"], filename + "-");
-                    h.forEach((h_item) => headers.push(h_item));
-                    headers.push(filename + "-random_order_num");
+                for (const element of activity["audioFiles"]) {
+                    if (Array.isArray(element)) {
+                        for (const option of element) {
+                            //const filename = audio.slice(audio.lastIndexOf("/") + 1);
+                            const h = this.formatQuestionsHeaders(activity["questions"], option["id"] + "-");
+                            h.forEach((h_item) => headers.push(h_item));
+                            headers.push(option["id"] + "-random_order_num");
+                            headers.push(option["id"] + "-file");
+                            randomAudioIDs.push(option["id"]);
+                        }
+                    } else {
+                        //const filename = audio.slice(audio.lastIndexOf("/") + 1);
+                        const h = this.formatQuestionsHeaders(activity["questions"], element["id"] + "-");
+                        h.forEach((h_item) => headers.push(h_item));
+                        headers.push(element["id"] + "-random_order_num");
+                        headers.push(element["id"] + "-file");
+                        randomAudioIDs.push(element["id"]);
+                    }
                 }
             } else {
                 const h = this.formatQuestionsHeaders(activity["questions"], "");
@@ -119,6 +134,7 @@ class OutputFormatter extends Component {
             headers: headers,
             freeDrawActIDs: freeDrawActIDs,
             predefinedIDs: predefinedIDs,
+            randomAudioIDs: randomAudioIDs,
             additionalQIDs: additionalQIDs,
             addBasedOnIDs: addBasedOnIDs,
             h_loaded: true
@@ -152,25 +168,40 @@ class OutputFormatter extends Component {
                     }
                 }
             } else if (activity["type"] === 'randomAudio') {
-                for (const audio of activity["audioFiles"]) {
-                    const filename = audio.slice(audio.lastIndexOf("/") + 1);
+                for (const audioId of this.state.randomAudioIDs) {
+                    //const filename = audio.slice(audio.lastIndexOf("/") + 1);
                     for (const q of activity["questions"]) {
                         if (q["type"] === "checkbox") {
                             for (const option of q["options"]) {
-                                const optHeader = filename + "-" + option["id"];
-                                if (option["id"] in r_d_actID[audio]) {
-                                    repeat[optHeader] = r_d_actID[audio][option["id"]];
+                                const optHeader = audioId + "-" + option["id"];
+                                if (r_d_actID.hasOwnProperty(audioId)) {
+                                    if (option["id"] in r_d_actID[audioId]) {
+                                        repeat[optHeader] = r_d_actID[audioId][option["id"]];
+                                    } else {
+                                        repeat[optHeader] = "false";
+                                    }
                                 } else {
-                                    repeat[optHeader] = "false";
+                                    repeat[optHeader] = "";
                                 }
                             }
                         } else {
-                            const qHeader = filename + "-" + q["id"];
-                            repeat[qHeader] = r_d_actID[audio][q["id"]];
+                            const qHeader = audioId + "-" + q["id"];
+                            if (r_d_actID.hasOwnProperty(audioId)) {
+                                repeat[qHeader] = r_d_actID[audioId][q["id"]];
+                            } else {
+                                repeat[qHeader] = "";
+                            }
                         }
                     }
-                    const orderHeader = filename + "-random_order_num";
-                    repeat[orderHeader] = r_d_actID[audio]["random_order_num"];
+                    const orderHeader = audioId + "-random_order_num";
+                    const fileHeader = audioId + "-file";
+                    if (r_d_actID.hasOwnProperty(audioId)) {
+                        repeat[orderHeader] = r_d_actID[audioId]["random_order_num"];
+                        repeat[fileHeader] = r_d_actID[audioId]["file"];
+                    } else {
+                        repeat[orderHeader] = "-1";
+                        repeat[fileHeader] = "N/A";
+                    }
                 }
             }
         }

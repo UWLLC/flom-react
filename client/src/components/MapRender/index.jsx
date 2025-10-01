@@ -46,6 +46,8 @@ class MapRender extends Component {
         this.reset = this.reset.bind(this);
         this.renderOnChange = this.renderOnChange.bind(this);
         this.updateCurrMapView = this.updateCurrMapView.bind(this);
+        this.redrawAlert = this.redrawAlert.bind(this);
+        this.repositionAlert = this.repositionAlert.bind(this);
     }
 
     componentDidUpdate(prevProps) {
@@ -166,6 +168,22 @@ class MapRender extends Component {
         //console.log(this.state.center);
     }
 
+    redrawAlert = () => {
+        var text = "There is no area available to redraw.";
+        if (this.props.activity.redrawError) {
+            text = this.props.activity.redrawError;
+        }
+        alert(text);
+    }
+
+    repositionAlert = () => {
+        var text = "You can't use the 'reposition' button if the 'draw' button is inactive.";
+        if (this.props.activity.repositionError) {
+            text = this.props.activity.repositionError;
+        }
+        alert(text);
+    }
+
     render() {
         const { activity, values, onChange, current, length } = this.props;
 
@@ -206,18 +224,18 @@ class MapRender extends Component {
                                     <Row>
                                         <Col>
                                             <Button type="primary"
-                                                onClick={featureDrawn && !popped ? this.popPolygon : () => {alert("There is no area available to redraw.")}}
+                                                onClick={featureDrawn && !popped ? this.popPolygon : () => {this.redrawAlert}}
                                                 style={featureDrawn && !popped ? activeBtn : inactiveBtn }
                                                 aria-disabled={!featureDrawn || popped}>
-                                                Redraw Area
+                                                { activity.redrawText ? activity.redrawText : "Redraw Area" }
                                             </Button>
                                         </Col>
                                         <Col>
                                             <Button type="primary"
-                                                onClick={mode === 'CREATE' ? this.undoFireDraw : () => {alert("You can't use the 'reposition' button if the 'draw' button is inactive.")}}
+                                                onClick={mode === 'CREATE' ? this.undoFireDraw : () => {this.repositionAlert}}
                                                 style={mode === 'CREATE'? activeBtn : inactiveBtn }
                                                 aria-disabled={mode !== 'CREATE'}>
-                                                Reposition Map
+                                                { activity.repositionText ? activity.repositionText: "Reposition Map" }
                                             </Button>
                                         </Col>
                                     </Row>

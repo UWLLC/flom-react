@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Container, Card } from 'react-bootstrap';
-import { shuffle } from 'lodash';
+import { shuffle, random } from 'lodash';
 import PropTypes from 'prop-types';
 
 import AudioButton from '../AudioButton';
@@ -12,12 +12,24 @@ const RandomAudioRender = function RandomAudioRender({ activity, onChange, onFin
     const [responses, setResponses] = useState({});
 
     useEffect(() => {
-        const order = shuffle(activity.audioFiles);
-        setRandomized(order);
+        const order = []; 
+        for (const element of activity.audioFiles) {
+            if (Array.isArray(element)) {
+                order.push(element[random(0, (element.length - 1))]);
+            } else {
+                order.push(element);
+            }
+        }
+        var shuffled = order;
+        if (activity.shuffle === "true") {
+            shuffled = shuffle(order);
+        }
+        setRandomized(shuffled);
         const initialize = {}
-        order.forEach((file, idx) => {
-            initialize[file] = {
-                "random_order_num" : idx + 1
+        shuffled.forEach((obj, idx) => {
+            initialize[obj["id"]] = {
+                "random_order_num" : idx + 1,
+                "file" : obj["file"]
             };
         });
         setResponses(initialize);
@@ -29,8 +41,8 @@ const RandomAudioRender = function RandomAudioRender({ activity, onChange, onFin
         const activityComplete = nextAudioIndex >= randomized.length;
         document.getElementById('card-header').scroll({ top: 0 });
         if (activityComplete) {
-            for (const file of randomized) {
-                onChange(file, responses[file]);
+            for (const obj of randomized) {
+                onChange(obj["id"], responses[obj["id"]]);
             }
             onFinish();
         } else {
@@ -41,39 +53,47 @@ const RandomAudioRender = function RandomAudioRender({ activity, onChange, onFin
 
     const saveResponse = (questionID, response) => {
         const currResponse = responses;
-        currResponse[randomized[index]][questionID] = response;
+        currResponse[randomized[index]["id"]][questionID] = response;
         console.log(currResponse);
         setResponses[currResponse];
     };
 
 
+    var title = "Random Audio";
+    if (activity.randomAudioText) {
+        title = activity.randomAudioText;
+    }
+
     return (
         <Container>
-            <Card key={index}>
-                <Card.Header id="card-header">
-                    <Card.Title>
-                        Random Audio {index + 1}/{randomized.length}
-                    </Card.Title>
-                    <Card.Text>{activity.helpText}</Card.Text>
-                    <AudioButton
-                        className="random-audio-btn"
-                        src={randomized[index]}
-                        buttonPlay={activity.playText}
-                        buttonPause={activity.pauseText}
-                    />
-                </Card.Header>
-                <Card.Body>
-                    <FormRender
-                        questions={activity.questions}
-                        onChange={saveResponse}
-                        values={responses[randomized[index]]}
-                        onFinish={nextAudio}
-                        buttonText={activity.buttonText}
-                        playText={activity.playText}
-                        pauseText={activity.pauseText}
-                    />
-                </Card.Body>
-            </Card>
+            { randomized.length !== 0 &&
+                <Card key={index}>
+                    <Card.Header id="card-header">
+                        <Card.Title>
+                            {title} {index + 1}/{randomized.length}
+                        </Card.Title>
+                        <Card.Text>{activity.helpText}</Card.Text>
+                        <AudioButton
+                            className="random-audio-btn"
+                            src={randomized[index]["file"]}
+                            buttonPlay={activity.playText}
+                            buttonPause={activity.pauseText}
+                        />
+                    </Card.Header>
+                    <Card.Body>
+                        <FormRender
+                            questions={activity.questions}
+                            onChange={saveResponse}
+                            values={responses[randomized[index]["id"]]}
+                            onFinish={nextAudio}
+                            buttonText={activity.buttonText}
+                            playText={activity.playText}
+                            pauseText={activity.pauseText}
+                            requiredError={activity.requiredError}
+                        />
+                    </Card.Body>
+                </Card>
+           }
         </Container>
     );
 };

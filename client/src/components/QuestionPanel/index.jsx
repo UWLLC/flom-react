@@ -18,7 +18,10 @@ function QuestionPanel({
   reset,
   buttonText,
   playText,
-  pauseText
+  pauseText,
+  requiredError,
+  drawText,
+  drawingText
 }) {
   useEffect(() => {
     if (noDraw) {
@@ -39,6 +42,16 @@ function QuestionPanel({
     reset();
   };
 
+  var draw = 'Draw';
+  if (drawText) {
+    draw = drawText;
+  }
+
+  var drawing = 'Drawing';
+  if (drawingText) {
+    drawing = drawingText;
+  }
+
   const fire = () => {
     updateQuestionID(question.id);
     fireDraw();
@@ -52,7 +65,7 @@ function QuestionPanel({
             <Col align="center">
               <Button onClick={fire} disabled={mode === 'CREATE'}>
                 <BsFillPencilFill />
-                {mode === 'CREATE' ? 'Drawing' : 'Draw'}
+                {mode === 'CREATE' ? drawing : draw}
               </Button>
             </Col>
           </Row>
@@ -68,6 +81,7 @@ function QuestionPanel({
             buttonText={buttonText}
             playText={playText}
             pauseText={pauseText}
+            requiredError={requiredError}
           />
         </Suspense>
       )}
@@ -77,7 +91,7 @@ function QuestionPanel({
             <Row>
               <Col align="center">
                 <Button type="primary" onClick={onFinish}>
-                  Next
+                  {buttonText ? buttonText : "Next"}
                 </Button>
               </Col>
             </Row>

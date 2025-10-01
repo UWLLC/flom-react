@@ -48,6 +48,15 @@ const MapQuestion = function MapQuestion({
     }
 
     if (activity.function === 'additional') {
+      var beforeText = "About ";
+      if (activity.aboutBeforeText) {
+          beforeText = activity.aboutBeforeText;
+      }
+
+      var afterText = "";
+      if (activity.aboutAfterText) {
+          afterText = activity.aboutAfterText;
+      }
       const areas = values[activity.basedOn];
       result = [];
       // eslint-disable-next-line no-return-assign
@@ -57,7 +66,7 @@ const MapQuestion = function MapQuestion({
           (result = [
             ...result,
             {
-              title: `About ${area.name}`,
+              title: beforeText + `${area.name}` + afterText,
               id,
               geometry: area.geometry,
               properties: area.properties,
@@ -136,7 +145,7 @@ const MapQuestion = function MapQuestion({
               }}
               onClick={addMapQuestion}
             >
-              <BsPlus /> Add Another Area
+              <BsPlus /> { activity.addText ? activity.addText : "Add Another Area"}
             </Button>
           </div>
           <Container>
@@ -168,6 +177,9 @@ const MapQuestion = function MapQuestion({
               buttonText={activity.buttonText}
               playText={activity.playText}
               pauseText={activity.pauseText}
+              requiredError={activity.requiredError}
+              drawText={activity.drawText}
+              drawingText={activity.drawingText}
             />
           </Card.Body>
         </Card>
