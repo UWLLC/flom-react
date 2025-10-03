@@ -24,7 +24,7 @@ const Label = function Label({ label, audio, required, play, pause }) {
   );
 };
 
-const FormRender = function FormRender({ questions, buttonText, onChange, onFinish, playText, pauseText }) {
+const FormRender = function FormRender({ questions, buttonText, onChange, onFinish, playText, pauseText, requiredError }) {
   FormRender.propTypes = {
     // eslint-disable-next-line react/forbid-prop-types
     questions: PropTypes.array.isRequired,
@@ -291,7 +291,9 @@ const handleChange = (event) => {
             </Button>
           </Col>
           <Col>
-             <span style={hidden ? {display: "none"}: {color: "red"}}>*Please complete the required questions before moving to the next section.</span>
+            <span style={hidden ? {display: "none"}: {color: "red"}}>
+              { requiredError ? requiredError : "*Please complete the required questions before moving to the next section." }
+            </span>
           </Col>
         </Row>
       </Container>
