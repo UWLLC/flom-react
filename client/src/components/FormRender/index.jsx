@@ -80,6 +80,8 @@ const handleChange = (event) => {
     //console.log(JSON.stringify(inputs))
   };
 
+const selectDefault = " -- select an option -- ";
+
   return (
     <Form onSubmit={submitResponse}>
       {questions.map((question) => {
@@ -116,8 +118,7 @@ const handleChange = (event) => {
                 onChange={handleChange}
               >
                 <option disabled value="">
-                  {' '}
-                  -- select an option --{' '}
+                  { question.default ? question.default : selectDefault }
                 </option>
                 {question.options.map((option) => (
                     <option
