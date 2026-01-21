@@ -35,8 +35,16 @@ const mp3Upload = multer({
     }
 });
 
-router.post('/', passport.authenticate('jwt', { session: false }), mp3Upload.array('file'), async (req, res) => {
-    res.send(req.file)
+router.post('/', passport.authenticate('jwt', { session: false }), mp3Upload.array('file'), (req, res) => {
+    res.send("File array uploaded");
+    console.log(req.files);
+}, (error, req, res, next) => {
+    res.status(400).send({ error: error.message })
+})
+
+router.post('/participant', mp3Upload.array('file'), (req, res) => {
+    res.send("Participant array uploaded");
+    console.log(req.files);
 }, (error, req, res, next) => {
     res.status(400).send({ error: error.message })
 })

@@ -2,6 +2,8 @@ import { Component, Suspense } from 'react';
 import { Button, Table, Form, Container, Row, Col } from 'react-bootstrap';
 import Loading from '../../components/Loading';
 import ExportButtons from '../ExportButtons';
+import ExportAudio from '../ExportAudio';
+import AudioButton from '../AudioButton';
 
 class OutputFormatter extends Component {
     constructor(prop) {
@@ -22,6 +24,7 @@ class OutputFormatter extends Component {
             h_loaded: false,
             tab_loaded: false,
             gis_loaded: false,
+            has_record: false
         };
 
         this.formatQuestionsHeaders = this.formatQuestionsHeaders.bind(this);
@@ -47,7 +50,8 @@ class OutputFormatter extends Component {
                 ...this.state,
                 h_loaded: false,
                 tab_loaded: false,
-                gis_loaded: false
+                gis_loaded: false,
+                has_record: false
             })
             this.getHeaders();
         }
@@ -55,7 +59,11 @@ class OutputFormatter extends Component {
 
     formatQuestionsHeaders(questions, prefix) {
         const formatted = [];
+        var record = false;
         for (const q of questions) {
+            if (q["type"] === "recording" && !record) {
+                record = true;
+            }
             if (q["type"] === "checkbox") {
                 for (const opt of q["options"]) {
                     formatted.push(prefix + opt["id"]);
@@ -64,7 +72,7 @@ class OutputFormatter extends Component {
                 formatted.push(prefix + q["id"]);
             }
         }
-        return formatted;
+        return [formatted, record];
     }
 
     getHeaders() {
@@ -77,6 +85,7 @@ class OutputFormatter extends Component {
         const randomAudioIDs = [];
         const additionalQIDs = {};
         const addBasedOnIDs = {}; // addQID: basedOnID
+        var has_record = false;
         for (const activity of this.props.survey["activities"]) { //this.survey["activities"]) {
             if (activity["type"] === 'map') {
                 if (activity["function"] === 'predefined') {
@@ -85,17 +94,23 @@ class OutputFormatter extends Component {
                         headers.push(q["id"] + "-geometry");
                         headers.push(q["id"] + "-zoom");
                         if (q.hasOwnProperty("questions")) {
-                            const h = this.formatQuestionsHeaders(q["questions"], q["id"] + "-");
-                            h.forEach((h_item) => headers.push(h_item));
+                            const qh_info = this.formatQuestionsHeaders(q["questions"], q["id"] + "-");
+                            qh_info[0].forEach((h_item) => headers.push(h_item));
+                            if (qh_info[1] && !has_record) {
+                                has_record = true;
+                            }
                         }
                     }
                 } else if (activity["function"] === 'additional') {
-                    const h = this.formatQuestionsHeaders(activity["questions"], "add-");
-                    h.forEach((h_item) => headers.push(h_item));
-                    h.forEach((addH) => {
+                    const qh_info = this.formatQuestionsHeaders(activity["questions"], "add-");
+                    qh_info[0].forEach((h_item) => headers.push(h_item));
+                    qh_info[0].forEach((addH) => {
                         additionalQIDs[addH] = activity["id"];
                         addBasedOnIDs[addH] = activity["basedOn"];
                     });
+                    if (qh_info[1] && !has_record) {
+                        has_record = true;
+                    }
                 } else if (activity["function"] === 'freedraw') {
                     freeDrawActIDs.push(activity["id"]);
                     headers.push(activity["id"] + "-name");
@@ -108,25 +123,32 @@ class OutputFormatter extends Component {
                 for (const element of activity["audioFiles"]) {
                     if (Array.isArray(element)) {
                         for (const option of element) {
-                            //const filename = audio.slice(audio.lastIndexOf("/") + 1);
-                            const h = this.formatQuestionsHeaders(activity["questions"], option["id"] + "-");
-                            h.forEach((h_item) => headers.push(h_item));
+                            const qh_info = this.formatQuestionsHeaders(activity["questions"], option["id"] + "-");
+                            qh_info[0].forEach((h_item) => headers.push(h_item));
                             headers.push(option["id"] + "-random_order_num");
                             headers.push(option["id"] + "-file");
                             randomAudioIDs.push(option["id"]);
+                            if (qh_info[1] && !has_record) {
+                                has_record = true;
+                            }
                         }
                     } else {
-                        //const filename = audio.slice(audio.lastIndexOf("/") + 1);
-                        const h = this.formatQuestionsHeaders(activity["questions"], element["id"] + "-");
-                        h.forEach((h_item) => headers.push(h_item));
+                        const qh_info = this.formatQuestionsHeaders(activity["questions"], element["id"] + "-");
+                        qh_info[0].forEach((h_item) => headers.push(h_item));
                         headers.push(element["id"] + "-random_order_num");
                         headers.push(element["id"] + "-file");
                         randomAudioIDs.push(element["id"]);
+                        if (qh_info[1] && !has_record) {
+                            has_record = true;
+                        }
                     }
                 }
             } else {
-                const h = this.formatQuestionsHeaders(activity["questions"], "");
-                h.forEach((h_item) => headers.push(h_item));
+                const qh_info = this.formatQuestionsHeaders(activity["questions"], "");
+                qh_info[0].forEach((h_item) => headers.push(h_item));
+                if (qh_info[1] && !has_record) {
+                    has_record = true;
+                }
             }
         }
         this.setState({
@@ -137,7 +159,8 @@ class OutputFormatter extends Component {
             randomAudioIDs: randomAudioIDs,
             additionalQIDs: additionalQIDs,
             addBasedOnIDs: addBasedOnIDs,
-            h_loaded: true
+            h_loaded: true,
+            has_record: has_record
         });
     }
 
@@ -162,6 +185,13 @@ class OutputFormatter extends Component {
                             } else {
                                 repeat[option["id"]] = "false";
                             }
+                        }
+                    } else if (q["type"] === "recording") {
+                        if (r_d_actID[q["id"]]) {
+                            const path = response["survey"] + "/" + activity["id"] + "/";
+                            repeat[q["id"]] = path + r_d_actID[q["id"]][0];
+                        } else {
+                            repeat[q["id"]] = "no response";
                         }
                     } else {
                         repeat[q["id"]] = r_d_actID[q["id"]];
@@ -437,7 +467,7 @@ class OutputFormatter extends Component {
 
     render() {
         const { responses } = this.props;
-        const { headers, rowsLatLon, rowsLonLat, h_loaded, tab_loaded, gis_loaded, currToggle } = this.state;
+        const { headers, rowsLatLon, rowsLonLat, h_loaded, tab_loaded, gis_loaded, currToggle, has_record } = this.state;
         const radios = [
             {name: '(LAT, LON)', value: 'LatLon'},
             {name: 'LON LAT', value: 'LonLat'}
@@ -496,6 +526,11 @@ class OutputFormatter extends Component {
                         </Form>
                     </Col>
                 </Row>
+                { has_record && (
+                    <Row>
+                        <ExportAudio surveyname={surveyname}/>
+                    </Row>
+                )}
                 <Row>
                     <p>ArcGIS usually requires a longitude-latitude (LON LAT) Polygon format. Please double check what format you need before downloading the data.</p>
                     <p>Polygon coordinates are truncated in the table view and exported in their entirety in all formats.</p>
@@ -519,13 +554,21 @@ class OutputFormatter extends Component {
                                                 <tr key={currData.indexOf(row)}>
                                                     {Array.from(row).map((cell) => (
                                                         <td key={`${currData.indexOf(row)}-` + headers[Array.from(row).indexOf(cell)]}>
-                                                            { cell && cell.length > 50 ? (
+                                                            { cell && cell.endsWith(".mp3") ? (
+                                                                <AudioButton
+                                                                  src={"/static/audio/" + cell}
+                                                                  buttonPlay={"Play " + cell.split("/")[2]}
+                                                                  buttonPause={"Pause " + cell.split("/")[2]} />
+                                                            )
+                                                            : cell && cell.length > 50 ? (
                                                                 cell.substring(0, 50) + "..."
-                                                            ) : (cell)}
+                                                            )
+                                                            : ( cell )}
                                                         </td>
                                                     ))
                                                     }
-                                                </tr>))
+                                                </tr>
+                                            ))
                                         }
                                     </tbody>
                                 </Table>

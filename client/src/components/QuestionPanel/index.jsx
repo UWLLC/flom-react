@@ -19,6 +19,7 @@ function QuestionPanel({
   buttonText,
   playText,
   pauseText,
+  recordingText,
   requiredError,
   drawText,
   drawingText
@@ -81,6 +82,7 @@ function QuestionPanel({
             buttonText={buttonText}
             playText={playText}
             pauseText={pauseText}
+            recordingText={recordingText}
             requiredError={requiredError}
           />
         </Suspense>

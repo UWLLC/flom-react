@@ -90,6 +90,7 @@ const RandomAudioRender = function RandomAudioRender({ activity, onChange, onFin
                             playText={activity.playText}
                             pauseText={activity.pauseText}
                             requiredError={activity.requiredError}
+                            recordingText={activity.recordingText}
                         />
                     </Card.Body>
                 </Card>

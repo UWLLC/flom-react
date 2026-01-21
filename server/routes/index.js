@@ -5,6 +5,7 @@ const user = require('./user');
 const submission = require('./submission')
 const addSurvey = require('./addSurvey')
 const upload = require('./upload')
+const download = require('./download')
 
 // Asset controllers
 
@@ -30,4 +31,5 @@ module.exports = (app) => {
     app.use('/api/survey', survey);
     app.use('/api/auth', auth);
     app.use('/api/user', user);
+    app.use('/api/download', download);
 };

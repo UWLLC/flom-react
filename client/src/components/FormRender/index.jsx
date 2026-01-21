@@ -4,6 +4,7 @@ import { map } from 'lodash';
 import PropTypes from 'prop-types';
 
 import AudioButton from '../AudioButton';
+import AudioRecorder from '../AudioRecorder';
 
 const Label = function Label({ label, audio, required, play, pause }) {
   Label.propTypes = {
@@ -24,7 +25,7 @@ const Label = function Label({ label, audio, required, play, pause }) {
   );
 };
 
-const FormRender = function FormRender({ questions, buttonText, onChange, onFinish, playText, pauseText, requiredError }) {
+const FormRender = function FormRender({ questions, buttonText, onChange, onFinish, playText, pauseText, recordingText, requiredError }) {
   FormRender.propTypes = {
     // eslint-disable-next-line react/forbid-prop-types
     questions: PropTypes.array.isRequired,
@@ -80,11 +81,53 @@ const handleChange = (event) => {
     //console.log(JSON.stringify(inputs))
   };
 
+const handleRecording = (id, name, blob) => {
+    const data = [name, blob];
+    setInputs({
+      ...inputs,
+      [id]: data,
+    });
+    console.log("Saved " + data[0] + " to ID: " + id);
+    console.log("Blob: ", data[1]);
+  };
+
+const recStyle = {
+    "display": "inline",
+    "backgroundColor": "#eee",
+    "borderRadius": 50,
+    "color": "#333",
+    "fontWeight": "bold",
+    "fontSize": 18,
+    "width": "fit-content",
+    "paddingTop": 3,
+    "paddingRight": 3,
+    "paddingBottom": 4,
+    "paddingLeft": 3
+};
+
 const selectDefault = " -- select an option -- ";
 
   return (
     <Form onSubmit={submitResponse}>
       {questions.map((question) => {
+        if (question.type === 'recording') {
+          return (
+            <Form.Group className="mb-3" key={question.id}>
+                <span style={recStyle}>🎤</span><span>&nbsp;&nbsp;</span>
+                <Label
+                    label={question.title}
+                    audio={question.audio}
+                    required={question.required}
+                    play={playText}
+                    pause={pauseText}/>
+                <AudioRecorder
+                    questionId={question.id}
+                    saveFile={handleRecording}
+                    recordingText={recordingText}
+                />
+            </Form.Group>
+          );
+        }
         if (question.type === 'text') {
           return (
             <Form.Group className="mb-3" key={question.id}>

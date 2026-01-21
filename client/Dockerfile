@@ -6,7 +6,8 @@ COPY . ./
 
 RUN apt -y update && apt -y install npm
 RUN npm install -g n yarn
-RUN n lts
+#RUN n lts
+RUN n install --no-use-xz lts
 RUN npm install --force
 
 RUN yarn build

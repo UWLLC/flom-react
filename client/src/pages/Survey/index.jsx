@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams } from "react-router-dom";
 import { createBrowserHistory } from "history";
-import { getSurvey, submitAnswer } from '../../services/api';
+import { getSurvey, submitAnswer, recordingUpload, zipResponses } from '../../services/api';
 import PageRender from '../../components/PageRender';
 import Loading from '../../components/Loading';
 
@@ -94,6 +94,40 @@ function Survey(props) {
         setRunSurvey(setRunSurvey => ({ ...runSurvey, isStart: true, startTime: Date.now() }));
     }
 
+    const submitRecordings = () => {
+        var submitted = false;
+        for (const activity of getSurveyDef().activities) {
+            console.log("activity response: ", runSurvey.response[activity.id]);
+            const data = new FormData();
+            data.append('path', surveyId + "/" + activity.id);
+            var upload = false;
+            for (const q of activity.questions) {
+                const response = runSurvey.response[activity.id][q.id];
+                console.log("q response: ", response);
+                if (q.type === 'recording' && response) {
+                    const name = response[0];
+                    const blob = response[1];
+                    const file = new File([blob], name, {type: "audio/mpeg"});
+                    data.append('file', file);
+                    //data.append('name', name);
+                    upload = true;
+                    //recordingUpload(surveyId, data);
+                }
+            }
+            if (upload) {
+                console.log("form data: ", data);
+                console.log("sending data");
+                recordingUpload(data);
+                submitted = true;
+            } else {
+                console.log("no recordings");
+            }
+        }
+        if (submitted) {
+            zipResponses(surveyId);
+        }
+    }
+
     // Check Check
 
     if (runSurvey.isFetching) {
@@ -103,6 +137,7 @@ function Survey(props) {
         localStorage.clear();
         if (!isComplete) {
             //console.log('isComplete: ' + runSurvey.startTime)
+            submitRecordings();
             submitAnswer(getSurveyId(), runSurvey.response, runSurvey.startTime)
                 .then(() => {
                     //console.log('Submitted');
@@ -208,6 +243,7 @@ function Survey(props) {
                             requiredError={currentActivity.requiredError}
                             playText={currentActivity.playText}
                             pauseText={currentActivity.pauseText}
+                            recordingText={currentActivity.recordingText}
                             onChange={updateResponse}
                             values={currentResponse}
                             onFinish={handleOpen}
@@ -229,6 +265,7 @@ function Survey(props) {
                         requiredError={currentActivity.requiredError}
                         playText={currentActivity.playText}
                         pauseText={currentActivity.pauseText}
+                        recordingText={currentActivity.recordingText}
                         onChange={updateResponse}
                         values={currentResponse}
                         onFinish={next}

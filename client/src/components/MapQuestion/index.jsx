@@ -177,6 +177,7 @@ const MapQuestion = function MapQuestion({
               buttonText={activity.buttonText}
               playText={activity.playText}
               pauseText={activity.pauseText}
+              recordingText={activity.recordingText}
               requiredError={activity.requiredError}
               drawText={activity.drawText}
               drawingText={activity.drawingText}

@@ -62,6 +62,25 @@ export const submitAnswer = async (surveyID, args, startTime) => {
     return response.json();
 };
 
+export const recordingUpload = async (data) => {
+    const options = {
+        method: 'POST',
+        body: data,
+        mode: 'cors'
+    };
+
+    //console.log("recording upload options: ", options);
+    const response = await fetch(`/api/upload/participant`, options)
+        .catch(error => console.log('API > recordingUpload > error: ', error));
+    //console.log("recording upload response: ", response);
+};
+
+
+export const zipResponses = async (surveyID) => {
+    const response = await fetch(`/api/submission/zipSubmission/${surveyID}`)
+        .catch(error => console.log('API > zipResponses > error: ', error));
+    //console.log("zip response: ", response);
+};
 
 // New file upload for SurveyAddPage
 export const surveyAddPageUpload = async (data) => {
@@ -105,4 +124,24 @@ export const surveyModify = async (data, mode) => {
                 }
             }
         })
+};
+
+export const downloadAudio = async (surveyID) => {
+    const options = {
+        method: 'GET',
+        headers: authHeader()
+    };
+
+    const response = await fetch(`/api/download/audio/${surveyID}`, options);
+    return response.blob();
+};
+
+export const checkAudio = async (surveyID) => {
+    const options = {
+        method: 'GET',
+        headers: authHeader()
+    };
+    const response = await fetch(`/api/download/check/${surveyID}`, options);
+    //console.log("checkaudio api response: ", response);
+    return response.status;
 };
